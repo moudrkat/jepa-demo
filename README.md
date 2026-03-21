@@ -41,8 +41,8 @@ spatial relationships, motion dynamics.
 |---|--------|---------------|--------|
 | 01 | `demos/01_ijepa_representations.py` | Load pretrained I-JEPA ViT-H/14, extract features from Flowers102, visualize t-SNE clustering, similarity retrieval, and pairwise heatmap | Tested |
 | 02 | `demos/02_ijepa_masking_explained.py` | Visual explainer of I-JEPA's multi-block masking strategy — no model needed, pure visualization | Tested |
-| 03 | `demos/03_vjepa_video_classify.py` | V-JEPA 2 action recognition on video clips (downloads sample from HuggingFace) | Untested |
-| 04 | `demos/04_vjepa_action_anticipation.py` | Progressive reveal — watch the model "get it" as more video is shown | Untested |
+| 03 | `demos/03_vjepa_video_classify.py` | V-JEPA 2 action recognition on hand-object interaction clips (SSv2 — dipping, picking up, pushing) | Tested |
+| 04 | `demos/04_vjepa_action_anticipation.py` | Progressive reveal — watch confidence rise as more of a hand-object video is shown | Tested |
 
 ## Setup
 
@@ -60,7 +60,7 @@ pip install -e ".[dev]"
 ```
 
 Demo 01 downloads the Flowers102 dataset (~350 MB) on first run and the I-JEPA ViT-H/14 weights from HuggingFace (~2.4 GB).
-Demos 03/04 download V-JEPA 2 weights (~1-2 GB) and a sample video.
+Demos 03/04 download V-JEPA 2 weights (~1-2 GB) and sample videos from Something-Something V2 (hand-object interactions).
 Models are cached in `~/.cache/huggingface/`.
 
 ## Running
@@ -99,17 +99,18 @@ make help               # Show all available targets
 - ~6 GB RAM recommended
 - Demo 01: ~3 min (feature extraction on 200 images)
 - Demo 02: ~5 sec (visualization only, no model)
-- Demo 03: ~1-2 min (single video inference)
-- Demo 04: ~3-5 min (multiple inference passes)
+- Demo 03: ~2-3 min (3 video clips, inference on each)
+- Demo 04: ~3-5 min (4 progressive inference passes on one clip)
 
 ## Roadmap
 
-We want to build a more compelling, interactive demo — something beyond static flower classification that anyone can try in real time. Ideas we're exploring:
+The big next step is a **real-time video demo** — something anyone can try with just a webcam:
 
-- **Webcam-based demo** — point your camera at objects, see I-JEPA representations update live
-- **"Bring your own image/video"** — drag-and-drop interface where users run inference on their own files
-- **Real-time similarity search** — snap a photo, find the most similar images in a dataset instantly
-- **Interactive masking playground** — let users draw masks on images and see what the model predicts
+- **Live action narrator** — point your webcam at your desk, pick up objects, push things around, and V-JEPA 2 narrates what you're doing in real time ("Taking one of many similar things on the table", "Pushing something so it almost falls off...")
+- **V-JEPA + LLM combo** — feed V-JEPA 2's action predictions into a talking LLM that commentates your actions in natural language, like a live sports narrator for everyday tasks
+- **"Can the AI tell what you're doing?"** — a game mode where you perform actions and try to fool the model, or match a target action it gives you
+- **Webcam similarity search** — live I-JEPA features from your camera, matched against a dataset in real time
+- **Interactive masking playground** — draw masks on images and see what the model predicts
 
 If you have ideas for a killer use case, open an issue!
 

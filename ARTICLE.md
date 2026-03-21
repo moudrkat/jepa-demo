@@ -245,6 +245,66 @@ V-JEPA 2 (2025) takes this further, achieving state-of-the-art results on:
 - **Action anticipation** — predicting what will happen next
 - **Robot planning** — zero-shot manipulation of unfamiliar objects
 
+## Seeing It Work: V-JEPA 2 on Hand-Object Videos
+
+To test V-JEPA 2 in action, we used a model fine-tuned on **Something-Something V2**
+(SSv2) — a dataset of 174 classes of everyday hand-object interactions. Things like
+"pushing something from left to right", "picking something up", "pretending to open
+something without actually opening it". The classes are deliberately fine-grained: the
+model can't just recognize objects, it has to understand *what the hand is doing* and
+*how the object responds*.
+
+We pointed the model at three short clips it has never seen before.
+
+### Action Recognition
+
+![V-JEPA 2 classifying a brush being dipped](outputs/03_classify_dipping_brush.png)
+
+![V-JEPA 2 classifying someone picking up pens](outputs/03_classify_picking_up_pens.png)
+
+![V-JEPA 2 classifying someone pushing an object](outputs/03_classify_pushing_object.png)
+
+The results are remarkably precise:
+
+- A hand picking pens from a group → **"Taking one of many similar things on the table"**
+  at 100% confidence. Not just "picking something up" — the model recognizes that there
+  are *multiple similar objects* and the hand is *selecting one*.
+- A hand pushing a tissue pack on the floor → **"Pushing something so that it almost
+  falls off but doesn't"** at 100%. The model understands not just the pushing motion,
+  but the *outcome* — it almost fell, but didn't.
+- A brush being dipped into a bowl → **"Pretending to put something into something"**
+  at 94%. The model caught that the brush didn't fully go in — a subtle distinction
+  between pretending and actually doing it.
+
+This level of nuance — distinguishing "taking one of many" from "picking up", or
+"almost falls off" from "falls off" — comes directly from the JEPA training objective.
+By learning to predict abstract representations of masked video regions, V-JEPA 2
+understands the *dynamics* and *consequences* of actions, not just their surface
+appearance.
+
+### Progressive Anticipation: "What Happens Next?"
+
+What happens when we show the model only part of a video?
+
+![Progressive prediction as more video is revealed](outputs/04_progressive.png)
+
+We took the pen-picking clip and fed it to V-JEPA 2 in stages — 25%, 50%, 75%, and
+100% of the video. Even at 25% — just the hand entering the frame and approaching the
+pens — the model already guesses "Taking one of many similar things on the table" with
+64% confidence. By 50%, it's at 99%. By 75%, it's locked in at 100%.
+
+![Confidence evolution over video progression](outputs/04_confidence.png)
+
+This is not just pattern matching. At 25% of the video, the hand hasn't picked anything
+up yet. The model is reading the *intent* from the trajectory of the hand, the spatial
+layout of the objects, and the dynamics of the approach. It understands what is *about
+to happen* before it happens.
+
+![The reveal — V-JEPA anticipating the action](outputs/04_reveal.png)
+
+This is the JEPA world model in action: not just labeling what it sees, but building an
+internal model of the scene that supports prediction and anticipation.
+
 ## What JEPA Is Not
 
 A common misconception: JEPA is **not generative**. It cannot:
