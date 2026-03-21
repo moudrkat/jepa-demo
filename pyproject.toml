@@ -1,0 +1,30 @@
+[project]
+name = "jepa-demo"
+version = "0.1.0"
+description = "Visual demos of Meta's I-JEPA and V-JEPA 2 models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "torch",
+    "torchvision",
+    "transformers>=4.53.0",
+    "matplotlib",
+    "numpy",
+    "tqdm",
+    "Pillow",
+    "scikit-learn",
+    "opencv-python",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

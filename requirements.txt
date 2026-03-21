@@ -1,0 +1,9 @@
+torch
+torchvision
+transformers>=4.53.0
+matplotlib
+numpy
+tqdm
+Pillow
+scikit-learn
+opencv-python

@@ -1,0 +1,122 @@
+# JEPA Demo — Joint Embedding Predictive Architecture
+
+A collection of visual demos showcasing Meta's **I-JEPA** (image) and **V-JEPA 2** (video) models.
+Built for a video podcast presentation.
+
+## What is JEPA?
+
+JEPA learns visual representations by **predicting abstract representations** of masked
+image/video regions — not pixels. Unlike generative models (MAE, Sora), JEPA works entirely
+in latent space, which lets it focus on high-level semantics rather than low-level details.
+Unlike contrastive methods (SimCLR, DINO), it doesn't need hand-crafted augmentations or
+negative pairs.
+
+```
+  Image/Video
+       │
+       ▼
+ ┌───────────┐        ┌───────────┐
+ │  Context   │        │  Target   │
+ │  Encoder   │        │  Encoder  │  (EMA, no gradients)
+ │   (ViT)    │        │   (ViT)   │
+ └─────┬──────┘        └─────┬─────┘
+       │                     │
+       ▼                     ▼
+ ┌───────────┐         target patch
+ │ Predictor │         embeddings
+ │ (small    │── L2 ──▶ (stop-grad)
+ │  ViT)     │  loss
+ └───────────┘
+```
+
+**Key insight**: By predicting *representations* instead of pixels, JEPA ignores unpredictable
+low-level details (exact textures, lighting) and learns *what matters* — object identity,
+spatial relationships, motion dynamics.
+
+## Demos
+
+| # | Script | What it shows | Status |
+|---|--------|---------------|--------|
+| 01 | `demos/01_ijepa_representations.py` | Load pretrained I-JEPA ViT-H/14, extract features from Flowers102, visualize t-SNE clustering, similarity retrieval, and pairwise heatmap | Tested |
+| 02 | `demos/02_ijepa_masking_explained.py` | Visual explainer of I-JEPA's multi-block masking strategy — no model needed, pure visualization | Tested |
+| 03 | `demos/03_vjepa_video_classify.py` | V-JEPA 2 action recognition on video clips (downloads sample from HuggingFace) | Untested |
+| 04 | `demos/04_vjepa_action_anticipation.py` | Progressive reveal — watch the model "get it" as more video is shown | Untested |
+
+## Setup
+
+```bash
+make setup
+source .venv/bin/activate
+```
+
+Or manually:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+Demo 01 downloads the Flowers102 dataset (~350 MB) on first run and the I-JEPA ViT-H/14 weights from HuggingFace (~2.4 GB).
+Demos 03/04 download V-JEPA 2 weights (~1-2 GB) and a sample video.
+Models are cached in `~/.cache/huggingface/`.
+
+## Running
+
+```bash
+make run-01   # I-JEPA representations
+make run-02   # I-JEPA masking explainer
+make run-03   # V-JEPA 2 video classification
+make run-04   # V-JEPA 2 action anticipation
+make run-all  # Run everything
+```
+
+Or run scripts directly:
+
+```bash
+python demos/01_ijepa_representations.py
+python demos/02_ijepa_masking_explained.py
+python demos/03_vjepa_video_classify.py
+python demos/04_vjepa_action_anticipation.py
+```
+
+Results are saved to `outputs/`.
+
+## Contributing
+
+```bash
+make setup              # One-time setup
+make lint               # Check code style (ruff)
+make format             # Auto-format code
+make help               # Show all available targets
+```
+
+## Hardware
+
+- Works on **CPU** (no GPU required)
+- ~6 GB RAM recommended
+- Demo 01: ~3 min (feature extraction on 200 images)
+- Demo 02: ~5 sec (visualization only, no model)
+- Demo 03: ~1-2 min (single video inference)
+- Demo 04: ~3-5 min (multiple inference passes)
+
+## Roadmap
+
+We want to build a more compelling, interactive demo — something beyond static flower classification that anyone can try in real time. Ideas we're exploring:
+
+- **Webcam-based demo** — point your camera at objects, see I-JEPA representations update live
+- **"Bring your own image/video"** — drag-and-drop interface where users run inference on their own files
+- **Real-time similarity search** — snap a photo, find the most similar images in a dataset instantly
+- **Interactive masking playground** — let users draw masks on images and see what the model predicts
+
+If you have ideas for a killer use case, open an issue!
+
+## Papers
+
+- **I-JEPA**: [Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture](https://arxiv.org/abs/2301.08243) (CVPR 2023)
+- **V-JEPA**: [Revisiting Feature Prediction for Learning Visual Representations from Video](https://arxiv.org/abs/2404.08471) (2024)
+- **V-JEPA 2**: [Self-Supervised Video Models Enable Understanding, Prediction and Planning](https://arxiv.org/abs/2506.09985) (2025)
+
+## Credits
+
+Pretrained models by Meta FAIR. Architecture by Yann LeCun, Mahmoud Assran, Adrien Bardes et al.
