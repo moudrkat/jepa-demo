@@ -3,6 +3,8 @@
 A collection of visual demos showcasing Meta's **I-JEPA** (image) and **V-JEPA 2** (video) models.
 Built for a video podcast presentation.
 
+> **Want the full story?** Read [ARTICLE.md](ARTICLE.md) — a visual deep-dive into how JEPA works, with inline results from every demo.
+
 ## What is JEPA?
 
 JEPA learns visual representations by **predicting abstract representations** of masked
