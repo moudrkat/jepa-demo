@@ -6,11 +6,9 @@ env/
 # Data (large datasets, downloaded at runtime)
 data/
 
-# Generated outputs
-outputs/*.png
-outputs/*.jpg
-outputs/*.mp4
-!outputs/.gitkeep
+# Generated outputs (kept in repo so ARTICLE.md images are visible)
+# outputs/*.png
+# outputs/*.jpg
 
 # Python
 __pycache__/
