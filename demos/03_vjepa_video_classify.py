@@ -33,9 +33,11 @@ plt.rcParams.update({
     "figure.facecolor": "white",
 })
 
-# Sample videos — short clips with clear actions
+# Sample videos — SSv2-style hand-object interactions
 SAMPLE_VIDEOS = {
-    "bowling": "https://huggingface.co/datasets/nateraw/kinetics-mini/resolve/main/val/bowling/-WH-lxmGJVY_000005_000015.mp4",
+    "dipping_brush": "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/102148.webm",
+    "picking_up_pens": "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/103874.webm",
+    "pushing_object": "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/106248.webm",
 }
 
 
@@ -50,7 +52,8 @@ def load_video_opencv(path_or_url, max_frames=64):
 
     if str(path_or_url).startswith("http"):
         print(f"  Downloading video...")
-        tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+        suffix = Path(path_or_url).suffix or ".mp4"
+        tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
         urllib.request.urlretrieve(path_or_url, tmp.name)
         video_path = tmp.name
     else:

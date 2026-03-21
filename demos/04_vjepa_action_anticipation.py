@@ -37,7 +37,7 @@ plt.rcParams.update({
     "figure.facecolor": "white",
 })
 
-SAMPLE_VIDEO_URL = "https://huggingface.co/datasets/nateraw/kinetics-mini/resolve/main/val/bowling/-WH-lxmGJVY_000005_000015.mp4"
+SAMPLE_VIDEO_URL = "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/103874.webm"
 
 
 # ---------------------------------------------------------------------------
@@ -48,8 +48,10 @@ def load_video_opencv(url, max_frames=64):
     import tempfile
     import urllib.request
 
+    from pathlib import Path as _Path
     print(f"  Downloading video...")
-    tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    suffix = _Path(url).suffix or ".mp4"
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     urllib.request.urlretrieve(url, tmp.name)
 
     cap = cv2.VideoCapture(tmp.name)
