@@ -111,6 +111,10 @@ We want to build a more compelling, interactive demo — something beyond static
 
 If you have ideas for a killer use case, open an issue!
 
+## Article
+
+See [ARTICLE.md](ARTICLE.md) for a visual deep-dive into how JEPA works — with inline images from the demo outputs.
+
 ## Papers
 
 - **I-JEPA**: [Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture](https://arxiv.org/abs/2301.08243) (CVPR 2023)

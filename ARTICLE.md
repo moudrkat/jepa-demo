@@ -48,7 +48,7 @@ The image version, **I-JEPA**, trains on individual images using a clever maskin
 
 ### The Training Step, Visually
 
-*(See: `outputs/02_prediction_flow.png`)*
+![I-JEPA prediction flow](outputs/02_prediction_flow.png)
 
 Each training step follows five stages:
 
@@ -58,7 +58,7 @@ pixels). These patches are the basic units — like words in a sentence.
 **2. Mask & Split** → Patches are divided into three groups. This is where I-JEPA gets
 interesting:
 
-*(See: `outputs/02_masking_on_images.png`)*
+![Masking overlaid on real images](outputs/02_masking_on_images.png)
 
 - **Context** (blue) — a contiguous block of patches the model gets to see. About 25%
   of all patches. Think of it as looking through a window.
@@ -75,7 +75,7 @@ pixel between these two visible ones?").
 Each training step samples a different random mask — same image, completely different
 challenge every time:
 
-*(See: `outputs/02_mask_variations.png`)*
+![Different mask variations on the same image](outputs/02_mask_variations.png)
 
 **3. Encode Context** → A Vision Transformer processes *only* the visible context patches,
 producing a rich embedding for each one.
@@ -88,11 +88,11 @@ should be.
 embeddings. No pixels. No adversarial training. Just: "did you predict the right
 abstract features?"
 
-*(See: `outputs/02_architecture.png` for the full architecture diagram)*
+![I-JEPA architecture](outputs/02_architecture.png)
 
 ### What Makes This Different From MAE?
 
-*(See: `outputs/02_mae_vs_jepa.png`)*
+![MAE vs JEPA comparison](outputs/02_mae_vs_jepa.png)
 
 This is worth zooming in on, because the difference is subtle but critical.
 
@@ -109,11 +109,11 @@ roughly what kind.
 This is why JEPA features transfer better: the model was never distracted by pixel-level
 noise in the first place.
 
-*(See: `outputs/02_method_comparison.png` for a side-by-side of all three paradigms)*
+![Contrastive vs Generative vs JEPA](outputs/02_method_comparison.png)
 
 ### Why the Target Encoder Uses EMA (And Why It Matters)
 
-*(See: `outputs/02_ema_explained.png`)*
+![EMA target encoder explained](outputs/02_ema_explained.png)
 
 A crucial design choice: the target encoder is an Exponential Moving Average (EMA) of the
 context encoder. After each training step:
@@ -145,7 +145,7 @@ The results are striking.
 
 ### The Model Organizes Flowers by Species
 
-*(See: `outputs/01_tsne.png`)*
+![t-SNE clustering of I-JEPA representations](outputs/01_tsne.png)
 
 We extracted I-JEPA's internal representations for each flower image and projected them
 into 2D using t-SNE. Each dot is one image, colored by species.
@@ -159,7 +159,7 @@ memorize pixel patterns — it learned what makes a sunflower *a sunflower*, abs
 
 ### "Find Me More Like This"
 
-*(See: `outputs/01_similarity.png`)*
+![Image similarity retrieval](outputs/01_similarity.png)
 
 We used I-JEPA as a search engine: given a query flower, find the most similar images
 by cosine similarity in representation space.
@@ -175,7 +175,7 @@ not the incidental details like background color or camera angle.
 
 ### Cross-Species Similarities Make Sense
 
-*(See: `outputs/01_heatmap.png`)*
+![Pairwise cosine similarity heatmap](outputs/01_heatmap.png)
 
 The pairwise cosine similarity heatmap reveals something even more interesting. Yes,
 within-species similarity is highest (the dark blocks along the diagonal). But the
@@ -192,7 +192,7 @@ relationships on its own, purely from the self-supervised prediction task.
 
 ### How Did It Learn This?
 
-*(See: `outputs/02_transfer.png`)*
+![Transfer learning from ImageNet to flowers](outputs/02_transfer.png)
 
 This is the remarkable part. Remember: I-JEPA was trained on ImageNet (everyday objects,
 animals, vehicles, scenes) — **not flowers**. It has never seen the Flowers102 dataset.
