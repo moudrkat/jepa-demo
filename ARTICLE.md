@@ -374,6 +374,69 @@ fine-tuning) — the representations would be less action-specific but still cap
 general visual dynamics, similar to how I-JEPA clustered flower species it was never
 trained on.
 
+### Without Fine-Tuning: What Does the Raw Backbone See?
+
+The results above used a model that was fine-tuned on SSv2's 174 action classes. That
+raises a fair question: how much of the clustering quality comes from fine-tuning, and
+how much from the self-supervised pretraining alone?
+
+To find out, we ran the exact same experiment — same 8 clips, same concatenation, same
+sliding window, same k-means — but swapped the fine-tuned model for the **base
+pretrained V-JEPA 2** (ViT-L, 326M parameters). This model has never seen a single
+action label. It was trained purely by predicting masked spatio-temporal representations
+from unlabeled video.
+
+![t-SNE clustering — pretrained backbone](outputs/06_tsne_clusters.png)
+
+The pretrained model still separates most actions into distinct clusters. The t-SNE
+plot shows recognizable structure: actions that look different end up in different
+regions of embedding space. The clusters are less tight than with the fine-tuned model
+— there's more overlap and some actions bleed into each other — but the overall
+organization is clearly there.
+
+![Timeline — pretrained backbone](outputs/06_timeline.png)
+
+The timeline tells a similar story. Cluster boundaries roughly track the ground-truth
+action transitions, though with more noise at the edges. The model finds the temporal
+structure of the video without any supervision about what "actions" are.
+
+![Cluster samples — pretrained backbone](outputs/06_cluster_samples.png)
+
+The representative frames confirm that each cluster captures visually and temporally
+coherent segments. The pretrained model groups by a mix of scene appearance and motion
+dynamics — it hasn't been taught to prioritize action over background, so some clusters
+reflect the visual context as much as the action itself.
+
+**What this tells us:** The self-supervised prediction objective alone — predicting
+masked video representations without any labels — is enough to build representations
+that capture meaningful temporal structure. Fine-tuning sharpens the action boundaries
+and teaches the model to emphasize dynamics over appearance, but the foundation is
+already there from pretraining. This mirrors what we saw with I-JEPA and flowers:
+the model learns general visual structure that transfers to tasks it was never
+trained on.
+
+### Interpolation: The Pretrained Backbone as a Continuous World Model
+
+There's a deeper implication here. The fine-tuned model's embedding space is carved
+into sharp decision boundaries around 174 SSv2 action classes — interpolating between
+two actions would hit an abrupt transition. But the pretrained backbone was never
+pushed toward discrete categories. It learned "what follows what" from raw video,
+so its embedding space should form a smoother, more continuous manifold.
+
+This means you could potentially *interpolate* between embeddings — say, between
+"hand approaching object" and "hand grasping object" — and trace a plausible
+trajectory through representation space. If the intermediate points correspond to
+meaningful intermediate states (hand getting closer, fingers opening, contact
+beginning), then the model has learned something about the *dynamics* of actions,
+not just categorical labels.
+
+This is exactly the property you'd want in a world model: a continuous space where
+nearby points represent nearby states, and smooth paths through the space correspond
+to physically plausible transitions. The pretrained V-JEPA backbone, unconstrained
+by classification boundaries, is a better candidate for this kind of interpolation
+than its fine-tuned counterpart — and a promising foundation for planning and
+reasoning about physical actions.
+
 ## What JEPA Is Not
 
 A common misconception: JEPA is **not generative**. It cannot:
