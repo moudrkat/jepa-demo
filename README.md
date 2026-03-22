@@ -43,6 +43,7 @@ spatial relationships, motion dynamics.
 | 02 | `demos/02_ijepa_masking_explained.py` | Visual explainer of I-JEPA's multi-block masking strategy — no model needed, pure visualization | Tested |
 | 03 | `demos/03_vjepa_video_classify.py` | V-JEPA 2 action recognition on hand-object interaction clips (SSv2 — dipping, picking up, pushing) | Tested |
 | 04 | `demos/04_vjepa_action_anticipation.py` | Progressive reveal — watch confidence rise as more of a hand-object video is shown | Tested |
+| 05 | `demos/05_vjepa_cluster_analysis.py` | Temporal clustering — slide a window across concatenated action clips, cluster V-JEPA 2 embeddings with k-means, visualize with t-SNE | Tested |
 
 ## Setup
 
@@ -70,6 +71,7 @@ make run-01   # I-JEPA representations
 make run-02   # I-JEPA masking explainer
 make run-03   # V-JEPA 2 video classification
 make run-04   # V-JEPA 2 action anticipation
+make run-05   # V-JEPA 2 temporal clustering
 make run-all  # Run everything
 ```
 
@@ -80,6 +82,7 @@ python demos/01_ijepa_representations.py
 python demos/02_ijepa_masking_explained.py
 python demos/03_vjepa_video_classify.py
 python demos/04_vjepa_action_anticipation.py
+python demos/05_vjepa_cluster_analysis.py
 ```
 
 Results are saved to `outputs/`.

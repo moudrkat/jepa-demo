@@ -305,6 +305,75 @@ to happen* before it happens.
 This is the JEPA world model in action: not just labeling what it sees, but building an
 internal model of the scene that supports prediction and anticipation.
 
+## Seeing Structure: Temporal Clustering
+
+The demos above use V-JEPA 2's classification head — a supervised layer fine-tuned on
+SSv2's 174 labeled action classes. But how well-structured are the model's *internal
+representations*? If we strip away the classifier and look at the raw embeddings, do
+they still organize meaningfully?
+
+To test this, we downloaded 8 short clips from Something-Something V2, each showing a
+different hand-object action (pouring, folding, transferring, unscrewing, placing,
+lifting, opening, sorting). We concatenated them into a single 388-frame video, then
+slid a 16-frame window across it, extracting a V-JEPA 2 embedding at every 4 frames.
+94 embeddings total — each one a snapshot of "what's happening right now."
+
+Then we ran k-means clustering (k=8, matching the number of actions) on the raw
+embeddings, **with no action labels provided to the clustering algorithm**. The model
+itself has seen labeled actions during fine-tuning — we're not claiming the pipeline is
+label-free end-to-end. The question is narrower but still important: are the learned
+representations structured enough that a simple, generic clustering algorithm can
+recover the action boundaries without any task-specific guidance?
+
+### t-SNE: Actions Form Distinct Islands
+
+![t-SNE clustering of temporal embeddings](outputs/05_tsne_clusters.png)
+
+Left: embeddings colored by ground-truth action. Right: the same points colored by
+unsupervised k-means cluster. The clusters align remarkably well. Opening, lifting,
+and pouring each form tight, isolated groups. Some overlap appears between actions
+with similar hand motions (placing and transferring), which makes physical sense —
+the model sees genuine visual similarity there.
+
+Note that the backgrounds across clips vary significantly — different tables, surfaces,
+lighting conditions. If the model were simply matching visual appearance, the clusters
+would organize by scene, not by action. Instead, it captures the temporal dynamics:
+hand trajectories, object responses, motion patterns. This is JEPA's representation
+objective at work — the model learned to ignore unpredictable surface-level details
+and focus on semantics.
+
+### Timeline: Cluster Boundaries Match Action Boundaries
+
+![Action timeline comparison](outputs/05_timeline.png)
+
+The top row shows ground-truth action segments. The bottom shows the discovered
+clusters over time. The transitions align cleanly — the model finds the action
+boundaries without being told where they are. Some mixing occurs at the edges
+(expected with a sliding window that straddles two actions), but the overall
+temporal structure is recovered.
+
+### What Each Cluster Captures
+
+![Representative frames per cluster](outputs/05_cluster_samples.png)
+
+Each row shows 5 frames sampled from one cluster. The clusters are visually
+coherent: each row captures a single, distinct action. The model isn't just
+grouping by appearance (background color, object shape) — it's grouping by
+*what the hand is doing*.
+
+### Why This Matters for Real-Time Use
+
+This result shows that V-JEPA 2's embeddings are structured enough to serve as a
+**reference map**. A practical system wouldn't need to retrain or fine-tune anything —
+you'd record a few example clips of each action you care about, extract their
+embeddings, and use nearest-neighbor lookup to identify actions in a live video stream.
+
+The fine-tuned model gives you well-separated embeddings out of the box. For custom
+actions not in SSv2's 174 classes, you could use the self-supervised backbone (before
+fine-tuning) — the representations would be less action-specific but still capture
+general visual dynamics, similar to how I-JEPA clustered flower species it was never
+trained on.
+
 ## What JEPA Is Not
 
 A common misconception: JEPA is **not generative**. It cannot:
@@ -338,8 +407,8 @@ of pixels might be one of the more important ideas in modern AI.
 ---
 
 *This article accompanies the [JEPA Demo repository](.), which contains runnable
-visualizations of I-JEPA masking, pretrained model representations, and V-JEPA 2
-video classification.*
+visualizations of I-JEPA masking, pretrained model representations, V-JEPA 2
+video classification, and temporal clustering.*
 
 ### References
 
