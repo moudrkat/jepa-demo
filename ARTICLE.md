@@ -305,6 +305,138 @@ to happen* before it happens.
 This is the JEPA world model in action: not just labeling what it sees, but building an
 internal model of the scene that supports prediction and anticipation.
 
+## Seeing Structure: Temporal Clustering
+
+The demos above use V-JEPA 2's classification head — a supervised layer fine-tuned on
+SSv2's 174 labeled action classes. But how well-structured are the model's *internal
+representations*? If we strip away the classifier and look at the raw embeddings, do
+they still organize meaningfully?
+
+To test this, we downloaded 8 short clips from Something-Something V2, each showing a
+different hand-object action (pouring, folding, transferring, unscrewing, placing,
+lifting, opening, sorting). We concatenated them into a single 388-frame video, then
+slid a 16-frame window across it, extracting a V-JEPA 2 embedding at every 4 frames.
+94 embeddings total — each one a snapshot of "what's happening right now."
+
+Then we ran k-means clustering (k=8, matching the number of actions) on the raw
+embeddings, **with no action labels provided to the clustering algorithm**. The model
+itself has seen labeled actions during fine-tuning — we're not claiming the pipeline is
+label-free end-to-end. The question is narrower but still important: are the learned
+representations structured enough that a simple, generic clustering algorithm can
+recover the action boundaries without any task-specific guidance?
+
+### t-SNE: Actions Form Distinct Islands
+
+![t-SNE clustering of temporal embeddings](outputs/05_tsne_clusters.png)
+
+Left: embeddings colored by ground-truth action. Right: the same points colored by
+unsupervised k-means cluster. The clusters align remarkably well. Opening, lifting,
+and pouring each form tight, isolated groups. Some overlap appears between actions
+with similar hand motions (placing and transferring), which makes physical sense —
+the model sees genuine visual similarity there.
+
+Note that the backgrounds across clips vary significantly — different tables, surfaces,
+lighting conditions. If the model were simply matching visual appearance, the clusters
+would organize by scene, not by action. Instead, it captures the temporal dynamics:
+hand trajectories, object responses, motion patterns. This is JEPA's representation
+objective at work — the model learned to ignore unpredictable surface-level details
+and focus on semantics.
+
+### Timeline: Cluster Boundaries Match Action Boundaries
+
+![Action timeline comparison](outputs/05_timeline.png)
+
+The top row shows ground-truth action segments. The bottom shows the discovered
+clusters over time. The transitions align cleanly — the model finds the action
+boundaries without being told where they are. Some mixing occurs at the edges
+(expected with a sliding window that straddles two actions), but the overall
+temporal structure is recovered.
+
+### What Each Cluster Captures
+
+![Representative frames per cluster](outputs/05_cluster_samples.png)
+
+Each row shows 5 frames sampled from one cluster. The clusters are visually
+coherent: each row captures a single, distinct action. The model isn't just
+grouping by appearance (background color, object shape) — it's grouping by
+*what the hand is doing*.
+
+### Why This Matters for Real-Time Use
+
+This result shows that V-JEPA 2's embeddings are structured enough to serve as a
+**reference map**. A practical system wouldn't need to retrain or fine-tune anything —
+you'd record a few example clips of each action you care about, extract their
+embeddings, and use nearest-neighbor lookup to identify actions in a live video stream.
+
+The fine-tuned model gives you well-separated embeddings out of the box. For custom
+actions not in SSv2's 174 classes, you could use the self-supervised backbone (before
+fine-tuning) — the representations would be less action-specific but still capture
+general visual dynamics, similar to how I-JEPA clustered flower species it was never
+trained on.
+
+### Without Fine-Tuning: What Does the Raw Backbone See?
+
+The results above used a model that was fine-tuned on SSv2's 174 action classes. That
+raises a fair question: how much of the clustering quality comes from fine-tuning, and
+how much from the self-supervised pretraining alone?
+
+To find out, we ran the exact same experiment — same 8 clips, same concatenation, same
+sliding window, same k-means — but swapped the fine-tuned model for the **base
+pretrained V-JEPA 2** (ViT-L, 326M parameters). This model has never seen a single
+action label. It was trained purely by predicting masked spatio-temporal representations
+from unlabeled video.
+
+![t-SNE clustering — pretrained backbone](outputs/06_tsne_clusters.png)
+
+The pretrained model still separates most actions into distinct clusters. The t-SNE
+plot shows recognizable structure: actions that look different end up in different
+regions of embedding space. The clusters are less tight than with the fine-tuned model
+— there's more overlap and some actions bleed into each other — but the overall
+organization is clearly there.
+
+![Timeline — pretrained backbone](outputs/06_timeline.png)
+
+The timeline tells a similar story. Cluster boundaries roughly track the ground-truth
+action transitions, though with more noise at the edges. The model finds the temporal
+structure of the video without any supervision about what "actions" are.
+
+![Cluster samples — pretrained backbone](outputs/06_cluster_samples.png)
+
+The representative frames confirm that each cluster captures visually and temporally
+coherent segments. The pretrained model groups by a mix of scene appearance and motion
+dynamics — it hasn't been taught to prioritize action over background, so some clusters
+reflect the visual context as much as the action itself.
+
+**What this tells us:** The self-supervised prediction objective alone — predicting
+masked video representations without any labels — is enough to build representations
+that capture meaningful temporal structure. Fine-tuning sharpens the action boundaries
+and teaches the model to emphasize dynamics over appearance, but the foundation is
+already there from pretraining. This mirrors what we saw with I-JEPA and flowers:
+the model learns general visual structure that transfers to tasks it was never
+trained on.
+
+### Interpolation: The Pretrained Backbone as a Continuous World Model
+
+There's a deeper implication here. The fine-tuned model's embedding space is carved
+into sharp decision boundaries around 174 SSv2 action classes — interpolating between
+two actions would hit an abrupt transition. But the pretrained backbone was never
+pushed toward discrete categories. It learned "what follows what" from raw video,
+so its embedding space should form a smoother, more continuous manifold.
+
+This means you could potentially *interpolate* between embeddings — say, between
+"hand approaching object" and "hand grasping object" — and trace a plausible
+trajectory through representation space. If the intermediate points correspond to
+meaningful intermediate states (hand getting closer, fingers opening, contact
+beginning), then the model has learned something about the *dynamics* of actions,
+not just categorical labels.
+
+This is exactly the property you'd want in a world model: a continuous space where
+nearby points represent nearby states, and smooth paths through the space correspond
+to physically plausible transitions. The pretrained V-JEPA backbone, unconstrained
+by classification boundaries, is a better candidate for this kind of interpolation
+than its fine-tuned counterpart — and a promising foundation for planning and
+reasoning about physical actions.
+
 ## What JEPA Is Not
 
 A common misconception: JEPA is **not generative**. It cannot:
@@ -338,8 +470,8 @@ of pixels might be one of the more important ideas in modern AI.
 ---
 
 *This article accompanies the [JEPA Demo repository](.), which contains runnable
-visualizations of I-JEPA masking, pretrained model representations, and V-JEPA 2
-video classification.*
+visualizations of I-JEPA masking, pretrained model representations, V-JEPA 2
+video classification, and temporal clustering.*
 
 ### References
 

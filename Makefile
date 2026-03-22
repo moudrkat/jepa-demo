@@ -1,4 +1,4 @@
-.PHONY: setup run-all run-01 run-02 run-03 run-04 lint format clean
+.PHONY: setup run-all run-01 run-02 run-03 run-04 run-05 run-06 lint format clean
 
 PYTHON ?= python3
 VENV := .venv
@@ -10,7 +10,7 @@ $(VENV)/bin/activate:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install -e ".[dev]"
 
-run-all: run-01 run-02 run-03 run-04  ## Run all demos
+run-all: run-01 run-02 run-03 run-04 run-05 run-06  ## Run all demos
 
 run-01: ## I-JEPA representations (clustering & similarity)
 	$(PY) demos/01_ijepa_representations.py
@@ -23,6 +23,12 @@ run-03: ## V-JEPA 2 video classification
 
 run-04: ## V-JEPA 2 action anticipation
 	$(PY) demos/04_vjepa_action_anticipation.py
+
+run-05: ## V-JEPA 2 temporal cluster analysis (fine-tuned)
+	$(PY) demos/05_vjepa_cluster_analysis.py
+
+run-06: ## V-JEPA 2 temporal cluster analysis (pretrained, no fine-tuning)
+	$(PY) demos/06_vjepa_cluster_pretrained.py
 
 lint: ## Check code style
 	$(VENV)/bin/ruff check demos/
