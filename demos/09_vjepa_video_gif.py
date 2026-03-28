@@ -30,24 +30,20 @@ OUTPUT_DIR = Path("outputs")
 DEVICE = "cpu"
 MODEL_ID = "facebook/vjepa2-vitl-fpc16-256-ssv2"
 
-# Three diverse action videos from Something-Something V2
+# Three visually dramatic action videos from Something-Something V2
+BASE_URL = (
+    "https://huggingface.co/datasets/Nojah/limited_something_something_v2"
+    "/resolve/main/videos"
+)
 VIDEOS = {
-    "Dipping brush into paint": (
-        "https://huggingface.co/datasets/Nojah/limited_something_something_v2"
-        "/resolve/main/videos/102148.webm"
-    ),
-    "Taking pens from table": (
-        "https://huggingface.co/datasets/Nojah/limited_something_something_v2"
-        "/resolve/main/videos/103874.webm"
-    ),
-    "Pushing object to edge": (
-        "https://huggingface.co/datasets/Nojah/limited_something_something_v2"
-        "/resolve/main/videos/106248.webm"
-    ),
+    "Transferring between bowls": f"{BASE_URL}/115408.webm",
+    "Unscrewing a cap": f"{BASE_URL}/129954.webm",
+    "Sorting crayons": f"{BASE_URL}/173061.webm",
 }
 
-FPS = 8
-N_STEPS = 20  # number of progressive reveal steps
+FPS = 4  # slower for readability
+N_STEPS = 24  # more steps for smoother progression
+N_HOLD_FRAMES = 6  # hold final frame for emphasis
 TOP_K = 5  # number of predictions to show
 
 
@@ -141,10 +137,14 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
     )
     fig.patches.extend([progress_bg, progress_fill])
 
+    # Add hold frames at end (repeat last frame)
+    total_frames = N_STEPS + N_HOLD_FRAMES
+
     def update(i):
-        frac = fractions[i]
-        preds = all_preds[i]
-        frame = all_display_frames[i]
+        idx = min(i, N_STEPS - 1)
+        frac = fractions[idx]
+        preds = all_preds[idx]
+        frame = all_display_frames[idx]
         pct = int(frac * 100)
 
         # Video frame
@@ -190,7 +190,9 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
 
         return bars
 
-    anim = animation.FuncAnimation(fig, update, frames=N_STEPS, interval=1000 // FPS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=total_frames, interval=1000 // FPS, blit=False,
+    )
     anim.save(str(save_path), writer="pillow", fps=FPS, dpi=100)
     plt.close(fig)
     print(f"  Saved: {save_path}")
@@ -229,13 +231,15 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
     fig.patches.extend([progress_bg, progress_fill])
 
     names = list(videos_data.keys())
+    total_frames = N_STEPS + N_HOLD_FRAMES
 
     def update(i):
-        frac = fractions[i]
+        idx = min(i, N_STEPS - 1)
+        frac = fractions[idx]
         pct = int(frac * 100)
 
         for col, name in enumerate(names):
-            preds, frame = all_results[name][0][i], all_results[name][1][i]
+            preds, frame = all_results[name][0][idx], all_results[name][1][idx]
 
             # Top row: video frame
             ax = axes[0, col]
@@ -281,7 +285,9 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
         )
         progress_fill.set_width(0.8 * frac)
 
-    anim = animation.FuncAnimation(fig, update, frames=N_STEPS, interval=1000 // FPS, blit=False)
+    anim = animation.FuncAnimation(
+        fig, update, frames=total_frames, interval=1000 // FPS, blit=False,
+    )
     anim.save(str(save_path), writer="pillow", fps=FPS, dpi=100)
     plt.close(fig)
     print(f"  Saved: {save_path}")

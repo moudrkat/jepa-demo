@@ -44,8 +44,9 @@ CLASS_COLORS = [
 
 N_PER_CLASS = 30  # 300 total
 BATCH_SIZE = 8
-N_FRAMES = 80  # animation frames
-FPS = 15
+N_FRAMES = 60  # animation frames
+N_HOLD_FRAMES = 15  # hold final state
+FPS = 6  # slower for readability
 
 
 def load_model():
@@ -180,8 +181,12 @@ def create_animation(embedding, labels, raw_images):
                                   edgecolor="none", zorder=11)
     fig.patches.extend([progress_bg, progress_bar])
 
+    total_frames = N_FRAMES + N_HOLD_FRAMES
+
     def update(frame):
-        t = frame / (N_FRAMES - 1)
+        # Clamp to last real frame during hold period
+        f = min(frame, N_FRAMES - 1)
+        t = f / (N_FRAMES - 1)
         t_smooth = ease_in_out(t)
         pos = (1 - t_smooth) * start + t_smooth * final
         scatter.set_offsets(pos)
@@ -198,7 +203,7 @@ def create_animation(embedding, labels, raw_images):
             pct = int(t * 100)
             title.set_text(f"t-SNE optimizing...  ({pct}%)")
         else:
-            title.set_text("I-JEPA features: semantic clusters emerge ✓")
+            title.set_text("I-JEPA features: semantic clusters emerge")
 
         # Progress bar
         progress_bar.set_width(0.8 * t)
@@ -206,7 +211,7 @@ def create_animation(embedding, labels, raw_images):
         return scatter, title
 
     anim = animation.FuncAnimation(
-        fig, update, frames=N_FRAMES, interval=1000 // FPS, blit=False,
+        fig, update, frames=total_frames, interval=1000 // FPS, blit=False,
     )
 
     save_path = OUTPUT_DIR / "08_tsne_animation.gif"
