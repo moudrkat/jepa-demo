@@ -252,12 +252,11 @@ def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     for col, title in enumerate(col_titles):
         axes[0, col].set_title(title, fontsize=13, fontweight="bold", pad=12)
 
-    # Draw vertical separator
-    fig.patches.append(mpatches.FancyBboxPatch(
-        (0.498, 0.02), 0.004, 0.92,
-        transform=fig.transFigure, facecolor="#CCCCCC",
-        edgecolor="none", zorder=5,
-    ))
+    # Draw vertical separator line
+    line = plt.Line2D([0.5, 0.5], [0.03, 0.95],
+                      transform=fig.transFigure, color="#CCCCCC",
+                      linewidth=2, linestyle="--", zorder=5)
+    fig.lines.append(line)
 
     for i, (pil_img, class_name) in enumerate(samples):
         print(f"  Processing {class_name}...")
