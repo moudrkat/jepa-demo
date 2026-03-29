@@ -37,7 +37,7 @@ plt.rcParams.update({
     "figure.facecolor": "white",
 })
 
-SAMPLE_VIDEO_URL = "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/103874.webm"
+SAMPLE_VIDEO_URL = "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/115408.webm"
 
 
 # ---------------------------------------------------------------------------
@@ -134,72 +134,95 @@ def progressive_classify(model, processor, all_frames, fractions=(0.25, 0.50, 0.
 # Visualization 1: Progressive prediction grid
 # ---------------------------------------------------------------------------
 def plot_progressive_grid(results, all_frames, save_path):
-    """Grid: rows = fractions, cols = frames + prediction bar."""
+    """Stacked layout: each stage = frame strip on top + bar chart below."""
     fractions = sorted(results.keys())
     n_rows = len(fractions)
-    n_frame_cols = 5
+    n_frame_cols = 4
 
-    fig = plt.figure(figsize=(18, 4 * n_rows))
-    gs = fig.add_gridspec(n_rows, 2, width_ratios=[1, 1.2], hspace=0.35, wspace=0.3)
+    # Collect all unique top-3 labels across all fractions for fixed positioning
+    final_preds = results[fractions[-1]]["predictions"][:5]
+    fixed_labels = [p[0] for p in final_preds]
+
+    # 2 sub-rows per fraction: frames + bars
+    fig, axes = plt.subplots(n_rows, 2, figsize=(20, 3.5 * n_rows),
+                              gridspec_kw={"width_ratios": [1, 1.5], "wspace": 0.35})
+    fig.patch.set_facecolor("#FAFAFA")
 
     for row, frac in enumerate(fractions):
         data = results[frac]
         pct = int(frac * 100)
+        n_vis = data["n_visible_original"]
+        n_total = len(all_frames)
 
         # Left: frame strip
-        ax_frames = fig.add_subplot(gs[row, 0])
+        ax_frames = axes[row, 0]
         visible = data["visible_frames"]
         strip_indices = np.linspace(0, len(visible) - 1, n_frame_cols, dtype=int)
 
-        # Create a horizontal strip
         strip_h = visible[0].shape[0]
         strip_w = visible[0].shape[1]
-        gap = 4
+        gap = 6
         canvas_w = n_frame_cols * strip_w + (n_frame_cols - 1) * gap
-        canvas = np.ones((strip_h, canvas_w, 3), dtype=np.uint8) * 240
+        canvas = np.ones((strip_h, canvas_w, 3), dtype=np.uint8) * 245
 
         for i, si in enumerate(strip_indices):
             x0 = i * (strip_w + gap)
             canvas[:, x0:x0 + strip_w] = visible[si]
 
         ax_frames.imshow(canvas)
-        ax_frames.axis("off")
+        ax_frames.set_xticks([])
+        ax_frames.set_yticks([])
 
-        # Progress bar overlay
-        n_vis = data["n_visible_original"]
-        n_total = len(all_frames)
-        ax_frames.set_title(f"{pct}% of video seen ({n_vis}/{n_total} frames)", fontsize=13)
-
-        # Color border based on fraction
+        # Colored border by confidence
         color = plt.cm.RdYlGn(frac)
         for spine in ax_frames.spines.values():
             spine.set_visible(True)
             spine.set_color(color)
             spine.set_linewidth(3)
 
-        # Right: top-5 predictions
-        ax_bar = fig.add_subplot(gs[row, 1])
-        preds = data["predictions"][:5]
-        labels = [p[0] for p in preds]
-        probs = [p[1] for p in preds]
+        ax_frames.set_title(f"{pct}% seen  ({n_vis}/{n_total} frames)",
+                            fontsize=14, fontweight="bold", pad=8)
 
-        bar_colors = ["#2196F3"] + ["#B0BEC5"] * (len(labels) - 1)
-        bars = ax_bar.barh(range(len(labels)), probs, color=bar_colors, edgecolor="white")
-        ax_bar.set_yticks(range(len(labels)))
-        ax_bar.set_yticklabels(labels, fontsize=10)
+        # Right: top predictions — fixed label positions
+        ax_bar = axes[row, 1]
+        all_probs = data["all_probs"]
+        probs = []
+        for label in fixed_labels:
+            # Find this label's probability
+            found = False
+            for pl, pp in data["predictions"]:
+                if pl == label:
+                    probs.append(pp)
+                    found = True
+                    break
+            if not found:
+                # Look up by scanning all predictions
+                probs.append(0.0)
+
+        top_label = fixed_labels[np.argmax(probs)]
+        bar_colors = ["#2196F3" if l == top_label else "#B0BEC5" for l in fixed_labels]
+
+        bars = ax_bar.barh(range(len(fixed_labels)), probs, color=bar_colors,
+                           edgecolor="white", height=0.6)
+        ax_bar.set_yticks(range(len(fixed_labels)))
+        ax_bar.set_yticklabels(fixed_labels, fontsize=11)
         ax_bar.invert_yaxis()
-        ax_bar.set_xlim(0, 1)
-        ax_bar.grid(axis="x", alpha=0.2)
+        ax_bar.set_xlim(0, 1.08)
+        ax_bar.grid(axis="x", alpha=0.15)
+        ax_bar.spines["top"].set_visible(False)
+        ax_bar.spines["right"].set_visible(False)
 
         for bar, prob in zip(bars, probs):
-            ax_bar.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height() / 2,
-                        f"{prob:.1%}", va="center", fontsize=10)
+            if prob > 0.005:
+                ax_bar.text(bar.get_width() + 0.02, bar.get_y() + bar.get_height() / 2,
+                            f"{prob:.1%}", va="center", fontsize=11, fontweight="bold")
 
     plt.suptitle(
         '"What Happens Next?" — V-JEPA 2 Progressive Action Recognition',
-        fontsize=18, fontweight="bold", y=1.01,
+        fontsize=18, fontweight="bold", y=1.0,
     )
-    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    fig.subplots_adjust(left=0.02, right=0.98, hspace=0.45)
+    plt.savefig(save_path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close()
     print(f"  Saved → {save_path}")
 
