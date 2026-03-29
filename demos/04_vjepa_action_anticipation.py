@@ -37,7 +37,16 @@ plt.rcParams.update({
     "figure.facecolor": "white",
 })
 
-SAMPLE_VIDEO_URL = "https://huggingface.co/datasets/Nojah/limited_something_something_v2/resolve/main/videos/115408.webm"
+# Multiple videos showing genuine anticipation / prediction shifts
+BASE_URL = (
+    "https://huggingface.co/datasets/Nojah/limited_something_something_v2"
+    "/resolve/main/videos"
+)
+ANTICIPATION_VIDEOS = {
+    "rolling": f"{BASE_URL}/17200.webm",       # "can't roll" → "letting roll down"
+    "almost_falls": f"{BASE_URL}/206400.webm",  # "almost falls off but doesn't" at 50%
+    "plug_pull": f"{BASE_URL}/13230.webm",      # "plugging in" → "plugging but pulling out"
+}
 
 
 # ---------------------------------------------------------------------------
@@ -321,22 +330,32 @@ def main():
     print("=" * 55)
 
     model, processor = load_model()
-    all_frames = load_video_opencv(SAMPLE_VIDEO_URL)
 
-    print("\n  Progressive classification:")
-    results = progressive_classify(
-        model, processor, all_frames,
-        fractions=(0.25, 0.50, 0.75, 1.0),
-    )
+    for name, url in ANTICIPATION_VIDEOS.items():
+        print(f"\n  === Video: {name} ===")
+        try:
+            all_frames = load_video_opencv(url)
+        except Exception as e:
+            print(f"  Skipping {name}: {e}")
+            continue
 
-    print("\n  [1/3] Progressive prediction grid...")
-    plot_progressive_grid(results, all_frames, OUTPUT_DIR / "04_progressive.png")
+        print("  Progressive classification:")
+        results = progressive_classify(
+            model, processor, all_frames,
+            fractions=(0.25, 0.50, 0.75, 1.0),
+        )
 
-    print("  [2/3] Confidence evolution...")
-    plot_confidence_evolution(results, OUTPUT_DIR / "04_confidence.png")
+        print(f"  [1/3] Progressive prediction grid...")
+        plot_progressive_grid(results, all_frames,
+                              OUTPUT_DIR / f"04_progressive_{name}.png")
 
-    print("  [3/3] Reveal visualization...")
-    plot_reveal(all_frames, results, OUTPUT_DIR / "04_reveal.png")
+        print(f"  [2/3] Confidence evolution...")
+        plot_confidence_evolution(results,
+                                  OUTPUT_DIR / f"04_confidence_{name}.png")
+
+        print(f"  [3/3] Reveal visualization...")
+        plot_reveal(all_frames, results,
+                    OUTPUT_DIR / f"04_reveal_{name}.png")
 
     del model
     gc.collect()
