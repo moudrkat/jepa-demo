@@ -129,21 +129,22 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
     for cls_idx, name in model.config.id2label.items():
         label_to_idx[name] = cls_idx
 
-    # Create animation
-    fig = plt.figure(figsize=(14, 5))
+    # Create animation — video on top, bars below
+    fig = plt.figure(figsize=(14, 9))
     fig.patch.set_facecolor("#1A1A2E")
 
-    gs = fig.add_gridspec(1, 2, width_ratios=[1, 1.3], wspace=0.3)
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.2, 1], hspace=0.4)
+    fig.subplots_adjust(left=0.30, right=0.95, top=0.93, bottom=0.08)
     ax_frame = fig.add_subplot(gs[0, 0])
-    ax_bars = fig.add_subplot(gs[0, 1])
+    ax_bars = fig.add_subplot(gs[1, 0])
 
     # Progress bar area
     progress_bg = plt.Rectangle(
-        (0.05, 0.04), 0.38, 0.03,
+        (0.1, 0.02), 0.8, 0.02,
         transform=fig.transFigure, facecolor="#333355", edgecolor="none", zorder=10,
     )
     progress_fill = plt.Rectangle(
-        (0.05, 0.04), 0.0, 0.03,
+        (0.1, 0.02), 0.0, 0.02,
         transform=fig.transFigure, facecolor="#4FC3F7", edgecolor="none", zorder=11,
     )
     fig.patches.extend([progress_bg, progress_fill])
@@ -239,8 +240,9 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
         fixed = [p[0] for p in preds_list[-1][:3]]
         all_results[name] = (preds_list, probs_list, frames_list, fixed)
 
-    fig, axes = plt.subplots(2, n_vids, figsize=(6 * n_vids, 8),
-                              gridspec_kw={"height_ratios": [1, 1.2], "hspace": 0.35})
+    fig, axes = plt.subplots(2, n_vids, figsize=(7 * n_vids, 10),
+                              gridspec_kw={"height_ratios": [1, 1], "hspace": 0.5})
+    fig.subplots_adjust(left=0.12, right=0.97, top=0.92, bottom=0.06)
     fig.patch.set_facecolor("#1A1A2E")
 
     # Progress bar
@@ -281,7 +283,7 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
             # Bottom row: fixed label positions
             ax = axes[1, col]
             ax.clear()
-            display_labels = [l[:30] for l in fixed_labels]
+            display_labels = [l[:40] for l in fixed_labels]
             probs = [probs_full[label_to_idx[l]] for l in fixed_labels]
 
             top_label = fixed_labels[np.argmax(probs)]
@@ -291,7 +293,7 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
             bars = ax.barh(range(len(display_labels)), probs, color=bar_colors,
                            edgecolor="none", height=0.5)
             ax.set_yticks(range(len(display_labels)))
-            ax.set_yticklabels(display_labels, fontsize=9, color="white")
+            ax.set_yticklabels(display_labels, fontsize=10, color="white")
             ax.invert_yaxis()
             ax.set_xlim(0, 1.15)
             ax.set_facecolor("#1A1A2E")

@@ -153,8 +153,8 @@ def create_animation(embedding, labels, raw_images):
         fontsize=18, fontweight="bold", color="white", pad=15,
     )
 
-    ax.set_xlim(-1.6, 1.6)
-    ax.set_ylim(-1.6, 1.6)
+    ax.set_xlim(-1.3, 1.3)
+    ax.set_ylim(-1.3, 1.3)
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
@@ -234,16 +234,20 @@ def plot_final_frame(embedding, labels):
     ax.scatter(final[:, 0], final[:, 1], c=colors, s=50, alpha=0.85,
                edgecolors="white", linewidths=0.4)
 
-    # Add class labels at cluster centroids
+    # Add class labels offset above each cluster centroid
     for cls_idx in range(10):
         mask = labels == cls_idx
         cx, cy = final[mask].mean(axis=0)
+        # Place label above cluster, connected by a short line
         ax.annotate(
             STL10_CLASSES[cls_idx].upper(),
-            (cx, cy), fontsize=11, fontweight="bold", color="white",
-            ha="center", va="center",
+            xy=(cx, cy), xytext=(cx, cy + 0.15),
+            fontsize=11, fontweight="bold", color="white",
+            ha="center", va="bottom",
             bbox=dict(boxstyle="round,pad=0.3", facecolor=CLASS_COLORS[cls_idx],
                       alpha=0.85, edgecolor="white", linewidth=0.5),
+            arrowprops=dict(arrowstyle="-", color=CLASS_COLORS[cls_idx],
+                            lw=1.5, alpha=0.6),
         )
 
     ax.set_title(
@@ -251,8 +255,8 @@ def plot_final_frame(embedding, labels):
         "(self-supervised — no labels used during training)",
         fontsize=16, fontweight="bold", color="white", pad=15,
     )
-    ax.set_xlim(-1.6, 1.6)
-    ax.set_ylim(-1.6, 1.6)
+    ax.set_xlim(-1.3, 1.3)
+    ax.set_ylim(-1.3, 1.5)  # extra room for labels above
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
@@ -303,16 +307,22 @@ def plot_thumbnail_tsne(embedding, labels, raw_images):
         )
         ax.add_artist(ab)
 
-    # Class labels at centroids
+    # Class labels offset below each cluster (away from thumbnails)
     for cls_idx in range(10):
         mask = labels == cls_idx
-        cx, cy = final[mask].mean(axis=0)
+        pts = final[mask]
+        cx, cy = pts.mean(axis=0)
+        # Place label below the lowest point in the cluster
+        cy_bottom = pts[:, 1].min()
         ax.annotate(
-            STL10_CLASSES[cls_idx],
-            (cx, cy - 0.18), fontsize=10, fontweight="bold", color="white",
+            STL10_CLASSES[cls_idx].upper(),
+            xy=(cx, cy), xytext=(cx, cy_bottom - 0.15),
+            fontsize=11, fontweight="bold", color="white",
             ha="center", va="top",
-            bbox=dict(boxstyle="round,pad=0.2", facecolor=CLASS_COLORS[cls_idx],
-                      alpha=0.9, edgecolor="none"),
+            bbox=dict(boxstyle="round,pad=0.25", facecolor=CLASS_COLORS[cls_idx],
+                      alpha=0.9, edgecolor="white", linewidth=0.5),
+            arrowprops=dict(arrowstyle="-", color=CLASS_COLORS[cls_idx],
+                            lw=1.5, alpha=0.5),
         )
 
     ax.set_title(
@@ -320,8 +330,8 @@ def plot_thumbnail_tsne(embedding, labels, raw_images):
         "(trained on ImageNet, never saw these categories)",
         fontsize=18, fontweight="bold", color="white", pad=15,
     )
-    ax.set_xlim(-1.7, 1.7)
-    ax.set_ylim(-1.7, 1.7)
+    ax.set_xlim(-1.4, 1.4)
+    ax.set_ylim(-1.6, 1.4)
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
