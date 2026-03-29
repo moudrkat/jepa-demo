@@ -102,7 +102,8 @@ def classify_partial(model, processor, all_frames, fraction):
         label = model.config.id2label[idx.item()]
         preds.append((label, probs[idx].item()))
 
-    return preds, visible[-1]  # return last visible frame
+    # Also return full probs so callers can look up any label
+    return preds, visible[-1], probs.cpu().numpy()
 
 
 def create_single_video_gif(model, processor, all_frames, video_name, save_path):
@@ -112,11 +113,21 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
 
     # Pre-compute all predictions
     all_preds = []
+    all_probs = []
     all_display_frames = []
     for frac in fractions:
-        preds, frame = classify_partial(model, processor, all_frames, frac)
+        preds, frame, probs = classify_partial(model, processor, all_frames, frac)
         all_preds.append(preds)
+        all_probs.append(probs)
         all_display_frames.append(frame)
+
+    # Lock label order: use the final frame's top-K labels for all frames
+    final_preds = all_preds[-1]
+    fixed_labels = [p[0] for p in final_preds]
+    # Map label name -> model class index for probability lookup
+    label_to_idx = {}
+    for cls_idx, name in model.config.id2label.items():
+        label_to_idx[name] = cls_idx
 
     # Create animation
     fig = plt.figure(figsize=(14, 5))
@@ -143,7 +154,7 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
     def update(i):
         idx = min(i, N_STEPS - 1)
         frac = fractions[idx]
-        preds = all_preds[idx]
+        probs_full = all_probs[idx]
         frame = all_display_frames[idx]
         pct = int(frac * 100)
 
@@ -157,16 +168,20 @@ def create_single_video_gif(model, processor, all_frames, video_name, save_path)
             spine.set_color("#4FC3F7")
             spine.set_linewidth(2)
 
-        # Prediction bars
+        # Prediction bars — fixed label positions
         ax_bars.clear()
-        labels = [p[0][:35] for p in preds]
-        probs = [p[1] for p in preds]
+        display_labels = [l[:35] for l in fixed_labels]
+        probs = [probs_full[label_to_idx[l]] for l in fixed_labels]
 
-        bar_colors = ["#4FC3F7"] + ["#555577"] * (len(labels) - 1)
-        bars = ax_bars.barh(range(len(labels)), probs, color=bar_colors,
+        # Highlight the current top prediction
+        top_label = fixed_labels[np.argmax(probs)]
+        bar_colors = [
+            "#4FC3F7" if l == top_label else "#555577" for l in fixed_labels
+        ]
+        bars = ax_bars.barh(range(len(display_labels)), probs, color=bar_colors,
                             edgecolor="none", height=0.6)
-        ax_bars.set_yticks(range(len(labels)))
-        ax_bars.set_yticklabels(labels, fontsize=10, color="white")
+        ax_bars.set_yticks(range(len(display_labels)))
+        ax_bars.set_yticklabels(display_labels, fontsize=10, color="white")
         ax_bars.invert_yaxis()
         ax_bars.set_xlim(0, 1.05)
         ax_bars.set_facecolor("#1A1A2E")
@@ -204,16 +219,25 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
     n_vids = len(videos_data)
     fractions = np.linspace(0.1, 1.0, N_STEPS)
 
+    # Build label name -> model class index mapping
+    label_to_idx = {}
+    for cls_idx, lname in model.config.id2label.items():
+        label_to_idx[lname] = cls_idx
+
     # Pre-compute predictions for all videos
     all_results = {}
     for name, frames in videos_data.items():
         preds_list = []
+        probs_list = []
         frames_list = []
         for frac in fractions:
-            preds, frame = classify_partial(model, processor, frames, frac)
+            preds, frame, probs_full = classify_partial(model, processor, frames, frac)
             preds_list.append(preds)
+            probs_list.append(probs_full)
             frames_list.append(frame)
-        all_results[name] = (preds_list, frames_list)
+        # Lock labels from final frame's top-3
+        fixed = [p[0] for p in preds_list[-1][:3]]
+        all_results[name] = (preds_list, probs_list, frames_list, fixed)
 
     fig, axes = plt.subplots(2, n_vids, figsize=(6 * n_vids, 8),
                               gridspec_kw={"height_ratios": [1, 1.2], "hspace": 0.35})
@@ -239,7 +263,9 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
         pct = int(frac * 100)
 
         for col, name in enumerate(names):
-            preds, frame = all_results[name][0][idx], all_results[name][1][idx]
+            _, probs_list, frames_list, fixed_labels = all_results[name]
+            probs_full = probs_list[idx]
+            frame = frames_list[idx]
 
             # Top row: video frame
             ax = axes[0, col]
@@ -252,17 +278,20 @@ def create_multi_video_gif(model, processor, videos_data, save_path):
                 spine.set_color("#4FC3F7")
                 spine.set_linewidth(1.5)
 
-            # Bottom row: top-3 predictions
+            # Bottom row: fixed label positions
             ax = axes[1, col]
             ax.clear()
-            labels = [p[0][:30] for p in preds[:3]]
-            probs = [p[1] for p in preds[:3]]
+            display_labels = [l[:30] for l in fixed_labels]
+            probs = [probs_full[label_to_idx[l]] for l in fixed_labels]
 
-            bar_colors = ["#4FC3F7"] + ["#555577"] * (len(labels) - 1)
-            bars = ax.barh(range(len(labels)), probs, color=bar_colors,
+            top_label = fixed_labels[np.argmax(probs)]
+            bar_colors = [
+                "#4FC3F7" if l == top_label else "#555577" for l in fixed_labels
+            ]
+            bars = ax.barh(range(len(display_labels)), probs, color=bar_colors,
                            edgecolor="none", height=0.5)
-            ax.set_yticks(range(len(labels)))
-            ax.set_yticklabels(labels, fontsize=9, color="white")
+            ax.set_yticks(range(len(display_labels)))
+            ax.set_yticklabels(display_labels, fontsize=9, color="white")
             ax.invert_yaxis()
             ax.set_xlim(0, 1.15)
             ax.set_facecolor("#1A1A2E")
