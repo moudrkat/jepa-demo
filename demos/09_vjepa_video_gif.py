@@ -41,9 +41,9 @@ VIDEOS = {
     "Sorting crayons": f"{BASE_URL}/173061.webm",
 }
 
-FPS = 4  # slower for readability
-N_STEPS = 24  # more steps for smoother progression
-N_HOLD_FRAMES = 6  # hold final frame for emphasis
+FPS = 2  # ~500ms per frame, easy to read
+N_STEPS = 16  # progression steps
+N_HOLD_FRAMES = 6  # hold final frame ~3s
 TOP_K = 5  # number of predictions to show
 
 

@@ -44,9 +44,9 @@ CLASS_COLORS = [
 
 N_PER_CLASS = 30  # 300 total
 BATCH_SIZE = 8
-N_FRAMES = 60  # animation frames
-N_HOLD_FRAMES = 15  # hold final state
-FPS = 6  # slower for readability
+N_FRAMES = 40  # animation frames
+N_HOLD_FRAMES = 10  # hold final state ~3s
+FPS = 3  # ~333ms per frame, comfortable pace
 
 
 def load_model():
