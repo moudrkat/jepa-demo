@@ -551,10 +551,10 @@ def plot_mae_vs_jepa():
     axes[0, 1].set_title("MAE: Random 75% Masked", fontsize=13)
     axes[0, 1].axis("off")
 
-    # MAE output: reconstructed pixels (simulated with blur)
+    # MAE output: reconstructed pixels (simulated with heavy blur to show the effect)
     from PIL import ImageFilter
     pil_img = Image.fromarray((img * 255).astype(np.uint8))
-    blurred = np.array(pil_img.filter(ImageFilter.GaussianBlur(3))) / 255.0
+    blurred = np.array(pil_img.filter(ImageFilter.GaussianBlur(8))) / 255.0
     recon = img.copy()
     for p in mae_mask:
         r, c = divmod(p, grid_size)
@@ -563,6 +563,9 @@ def plot_mae_vs_jepa():
     axes[0, 2].imshow(recon)
     axes[0, 2].set_title("MAE Predicts: Pixels\n(must reconstruct textures, colors)", fontsize=12,
                          color="#E65100")
+    axes[0, 2].text(0.5, 0.02, "illustration — see demo 07 for real MAE output",
+                    transform=axes[0, 2].transAxes, ha="center", fontsize=8,
+                    color="#999", fontstyle="italic")
     axes[0, 2].axis("off")
 
     # Row 1: JEPA approach

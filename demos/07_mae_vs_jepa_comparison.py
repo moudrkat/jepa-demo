@@ -240,20 +240,21 @@ def jepa_visualise(pil_image, processor, model):
 def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     """Create the main side-by-side comparison figure.
 
-    3 columns: Original | MAE pixel reconstruction | JEPA feature activation
-    No duplicate originals, no dashed line, no mask columns — focus on output.
+    4 columns: Original | MAE: 75% hidden | MAE: reconstruction | JEPA: semantic focus
+    Shows what was masked so you can see which pixels MAE reconstructed.
     """
     n = len(samples)
 
-    fig, axes = plt.subplots(n, 3, figsize=(14, 4 * n + 1))
+    fig, axes = plt.subplots(n, 4, figsize=(18, 4 * n + 1))
     fig.patch.set_facecolor("#FAFAFA")
 
     col_titles = [
         "Original",
+        "MAE: 75% hidden",
         "MAE: pixel reconstruction",
         "JEPA: semantic focus",
     ]
-    col_colors = ["#333333", "#D32F2F", "#1565C0"]
+    col_colors = ["#333333", "#D32F2F", "#D32F2F", "#1565C0"]
 
     for col, (title, color) in enumerate(zip(col_titles, col_colors)):
         axes[0, col].set_title(title, fontsize=14, fontweight="bold",
@@ -270,12 +271,13 @@ def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
         axes[i, 0].imshow(orig_np)
         axes[i, 0].set_ylabel(class_name.upper(), fontsize=14, fontweight="bold",
                                rotation=0, labelpad=60, va="center")
-        axes[i, 1].imshow(composite_np)
+        axes[i, 1].imshow(masked_np)
+        axes[i, 2].imshow(composite_np)
 
         # JEPA feature activation
         img_np, masked_vis, attn_map = jepa_visualise(pil_224, jepa_proc, jepa_model)
-        axes[i, 2].imshow(img_np)
-        axes[i, 2].imshow(attn_map, cmap="inferno", alpha=0.6)
+        axes[i, 3].imshow(img_np)
+        axes[i, 3].imshow(attn_map, cmap="inferno", alpha=0.6)
 
     for ax in axes.flat:
         ax.set_xticks([])
@@ -284,7 +286,8 @@ def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     plt.suptitle("What does each model output?", fontsize=18, fontweight="bold", y=1.0)
 
     fig.text(0.5, 0.01,
-             "MAE reconstructs blurry pixels  |  JEPA highlights what matters semantically",
+             "MAE must reconstruct every hidden pixel (blurry)  |  "
+             "JEPA learns which parts matter (semantic heatmap)",
              ha="center", fontsize=12, color="#555")
 
     plt.tight_layout(rect=[0.06, 0.03, 1.0, 0.96])
@@ -299,7 +302,7 @@ def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
 def plot_patch_zoom(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     """Show a zoomed patch-level comparison for one image.
 
-    3 columns: Original | MAE reconstruction | JEPA feature activation
+    4 columns: Original | MAE: masked | MAE: reconstruction | JEPA: semantic focus
     """
     pil_img, class_name = samples[0]
     pil_224 = pil_img.resize((224, 224), Image.LANCZOS)
@@ -309,19 +312,23 @@ def plot_patch_zoom(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     )
     img_np, masked_vis, attn_map = jepa_visualise(pil_224, jepa_proc, jepa_model)
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
     fig.patch.set_facecolor("#FAFAFA")
 
     axes[0].imshow(orig_np)
     axes[0].set_title(f"Original ({class_name})", fontsize=14, fontweight="bold")
 
-    axes[1].imshow(composite_np)
-    axes[1].set_title("MAE: pixel reconstruction", fontsize=14,
+    axes[1].imshow(masked_np)
+    axes[1].set_title("MAE: 75% hidden", fontsize=14,
                       fontweight="bold", color="#D32F2F")
 
-    axes[2].imshow(img_np)
-    axes[2].imshow(attn_map, cmap="inferno", alpha=0.6)
-    axes[2].set_title("JEPA: semantic focus", fontsize=14,
+    axes[2].imshow(composite_np)
+    axes[2].set_title("MAE: pixel reconstruction", fontsize=14,
+                      fontweight="bold", color="#D32F2F")
+
+    axes[3].imshow(img_np)
+    axes[3].imshow(attn_map, cmap="inferno", alpha=0.6)
+    axes[3].set_title("JEPA: semantic focus", fontsize=14,
                       fontweight="bold", color="#1565C0")
 
     for ax in axes:
