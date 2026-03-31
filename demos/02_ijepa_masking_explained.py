@@ -587,18 +587,46 @@ def plot_mae_vs_jepa():
     axes[1, 1].set_title("JEPA: Block Masking\n(blue=context, red=target)", fontsize=12)
     axes[1, 1].axis("off")
 
-    # JEPA output: abstract representation (visualized as colored blocks)
-    abstract = np.ones((224, 224, 3)) * 0.95
-    for p in tgt:
+    # JEPA output: show that predictions are abstract vectors, not pixels
+    # Draw a clean schematic: target regions with vector notation
+    abstract_bg = np.ones((224, 224, 3)) * 0.95
+    # Show context patches faintly
+    for p in ctx:
         r, c = divmod(p, grid_size)
         y0, x0 = r * patch_px, c * patch_px
-        # Color by "semantic category" — simulate with average color
-        avg_color = img[y0:y0 + patch_px, x0:x0 + patch_px].mean(axis=(0, 1))
-        # Make it abstract — just flat color blocks
-        abstract[y0:y0 + patch_px, x0:x0 + patch_px] = avg_color * 0.6 + 0.2
+        abstract_bg[y0:y0 + patch_px, x0:x0 + patch_px] = [0.85, 0.91, 0.97]
+    # Show target patches as colored blocks with vector labels
+    target_colors = [
+        [0.99, 0.88, 0.85],  # light red
+        [0.85, 0.93, 0.85],  # light green
+        [0.88, 0.85, 0.97],  # light purple
+        [0.97, 0.95, 0.82],  # light yellow
+    ]
+    # Group target patches into contiguous blocks for labeling
+    target_list = sorted(tgt)
+    # Assign colors by spatial region
+    for p in target_list:
+        r, c = divmod(p, grid_size)
+        y0, x0 = r * patch_px, c * patch_px
+        color_idx = (r // 4 + c // 8) % len(target_colors)
+        abstract_bg[y0:y0 + patch_px, x0:x0 + patch_px] = target_colors[color_idx]
+        # Add thin border
+        abstract_bg[y0, x0:x0 + patch_px] = [0.7, 0.7, 0.7]
+        abstract_bg[y0:y0 + patch_px, x0] = [0.7, 0.7, 0.7]
 
-    axes[1, 2].imshow(abstract)
-    axes[1, 2].set_title("JEPA Predicts: Representations\n(abstract features, not pixels)", fontsize=12,
+    axes[1, 2].imshow(abstract_bg)
+    # Add vector labels on the target regions
+    axes[1, 2].text(112, 60, "z = [0.3, -0.1, 0.8, ...]",
+                    ha="center", va="center", fontsize=10,
+                    fontweight="bold", color="#1565C0",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor="#1565C0", alpha=0.9))
+    axes[1, 2].text(112, 160, "abstract features\nnot pixels",
+                    ha="center", va="center", fontsize=11,
+                    fontstyle="italic", color="#555",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
+                              edgecolor="#999", alpha=0.85))
+    axes[1, 2].set_title("JEPA Predicts: Representations\n(1024-dim feature vectors)", fontsize=12,
                          color="#1565C0")
     axes[1, 2].axis("off")
 

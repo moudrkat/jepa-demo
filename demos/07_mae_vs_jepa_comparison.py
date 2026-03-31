@@ -238,70 +238,56 @@ def jepa_visualise(pil_image, processor, model):
 # ---------- Main comparison figure ----------
 
 def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
-    """Create the main side-by-side comparison figure."""
+    """Create the main side-by-side comparison figure.
+
+    3 columns: Original | MAE pixel reconstruction | JEPA feature activation
+    No duplicate originals, no dashed line, no mask columns — focus on output.
+    """
     n = len(samples)
 
-    fig, axes = plt.subplots(n, 6, figsize=(24, 4 * n + 2))
+    fig, axes = plt.subplots(n, 3, figsize=(14, 4 * n + 1))
     fig.patch.set_facecolor("#FAFAFA")
 
     col_titles = [
-        "Original", "MAE: 75% random mask", "MAE: pixel reconstruction",
-        "Original", "JEPA: block mask", "JEPA: feature activation\n(semantic focus)",
+        "Original",
+        "MAE: pixel reconstruction",
+        "JEPA: semantic focus",
     ]
+    col_colors = ["#333333", "#D32F2F", "#1565C0"]
 
-    for col, title in enumerate(col_titles):
-        axes[0, col].set_title(title, fontsize=13, fontweight="bold", pad=12)
-
-    # Draw vertical separator line
-    line = plt.Line2D([0.5, 0.5], [0.03, 0.95],
-                      transform=fig.transFigure, color="#CCCCCC",
-                      linewidth=2, linestyle="--", zorder=5)
-    fig.lines.append(line)
+    for col, (title, color) in enumerate(zip(col_titles, col_colors)):
+        axes[0, col].set_title(title, fontsize=14, fontweight="bold",
+                               pad=12, color=color)
 
     for i, (pil_img, class_name) in enumerate(samples):
         print(f"  Processing {class_name}...")
         pil_224 = pil_img.resize((224, 224), Image.LANCZOS)
 
-        # MAE side
+        # MAE reconstruction
         orig_np, masked_np, composite_np, mask_np = mae_reconstruct(
             mae_model, mae_proc, pil_224
         )
         axes[i, 0].imshow(orig_np)
         axes[i, 0].set_ylabel(class_name.upper(), fontsize=14, fontweight="bold",
                                rotation=0, labelpad=60, va="center")
-        axes[i, 1].imshow(masked_np)
-        axes[i, 2].imshow(composite_np)
+        axes[i, 1].imshow(composite_np)
 
-        # JEPA side
+        # JEPA feature activation
         img_np, masked_vis, attn_map = jepa_visualise(pil_224, jepa_proc, jepa_model)
-        axes[i, 3].imshow(img_np)
-        axes[i, 4].imshow(masked_vis)
-
-        # Attention overlaid on image
-        axes[i, 5].imshow(img_np)
-        axes[i, 5].imshow(attn_map, cmap="inferno", alpha=0.6)
+        axes[i, 2].imshow(img_np)
+        axes[i, 2].imshow(attn_map, cmap="inferno", alpha=0.6)
 
     for ax in axes.flat:
         ax.set_xticks([])
         ax.set_yticks([])
 
-    # Add MAE / JEPA headers
-    fig.text(0.25, 0.98, "MAE — reconstructs pixels",
-             ha="center", fontsize=16, fontweight="bold", color="#D32F2F")
-    fig.text(0.75, 0.98, "I-JEPA — predicts abstract representations",
-             ha="center", fontsize=16, fontweight="bold", color="#1565C0")
+    plt.suptitle("What does each model output?", fontsize=18, fontweight="bold", y=1.0)
 
-    # Bottom annotation
-    fig.text(0.25, 0.01,
-             "⚠ MAE wastes capacity predicting exact pixel values\n"
-             "including noise, lighting, texture details",
-             ha="center", fontsize=11, color="#666", style="italic")
-    fig.text(0.75, 0.01,
-             "✓ JEPA focuses on semantic structure:\n"
-             "shape, object parts, spatial relationships",
-             ha="center", fontsize=11, color="#666", style="italic")
+    fig.text(0.5, 0.01,
+             "MAE reconstructs blurry pixels  |  JEPA highlights what matters semantically",
+             ha="center", fontsize=12, color="#555")
 
-    plt.tight_layout(rect=[0.06, 0.04, 1.0, 0.96])
+    plt.tight_layout(rect=[0.06, 0.03, 1.0, 0.96])
     save_path = OUTPUT_DIR / "07_mae_vs_jepa.png"
     fig.savefig(save_path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
@@ -311,7 +297,10 @@ def plot_comparison(mae_model, mae_proc, jepa_model, jepa_proc, samples):
 # ---------- Zoomed-in patch comparison ----------
 
 def plot_patch_zoom(mae_model, mae_proc, jepa_model, jepa_proc, samples):
-    """Show a zoomed patch-level comparison for one image."""
+    """Show a zoomed patch-level comparison for one image.
+
+    3 columns: Original | MAE reconstruction | JEPA feature activation
+    """
     pil_img, class_name = samples[0]
     pil_224 = pil_img.resize((224, 224), Image.LANCZOS)
 
@@ -320,21 +309,20 @@ def plot_patch_zoom(mae_model, mae_proc, jepa_model, jepa_proc, samples):
     )
     img_np, masked_vis, attn_map = jepa_visualise(pil_224, jepa_proc, jepa_model)
 
-    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     fig.patch.set_facecolor("#FAFAFA")
 
     axes[0].imshow(orig_np)
-    axes[0].set_title(f"Original ({class_name})", fontsize=13, fontweight="bold")
+    axes[0].set_title(f"Original ({class_name})", fontsize=14, fontweight="bold")
 
-    axes[1].imshow(masked_np)
-    axes[1].set_title("MAE: random 75% mask", fontsize=13, fontweight="bold")
+    axes[1].imshow(composite_np)
+    axes[1].set_title("MAE: pixel reconstruction", fontsize=14,
+                      fontweight="bold", color="#D32F2F")
 
-    axes[2].imshow(composite_np)
-    axes[2].set_title("MAE: pixel reconstruction", fontsize=13, fontweight="bold")
-
-    axes[3].imshow(img_np)
-    axes[3].imshow(attn_map, cmap="inferno", alpha=0.6)
-    axes[3].set_title("JEPA: feature activation", fontsize=13, fontweight="bold")
+    axes[2].imshow(img_np)
+    axes[2].imshow(attn_map, cmap="inferno", alpha=0.6)
+    axes[2].set_title("JEPA: semantic focus", fontsize=14,
+                      fontweight="bold", color="#1565C0")
 
     for ax in axes:
         ax.set_xticks([])

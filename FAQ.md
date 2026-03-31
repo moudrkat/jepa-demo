@@ -197,14 +197,14 @@ The model also segments a 60-second continuous playground video into actions in 
 
 ### Is V-JEPA 2 production ready?
 
-**The short answer:** The model is research-grade, open-weight, and runs inference on a single GPU. It's usable today for prototyping and specific applications, but it's not a drop-in enterprise product.
+**The short answer:** The model is research-grade, open-weight, and runs inference even on CPU. It's usable today for prototyping and specific applications, but it's not a drop-in enterprise product.
 
 **What's ready:**
 - Open weights from Meta (via PyTorch Hub / HuggingFace)
-- Runs on a single GPU for inference (we used a single NVIDIA GPU for all demos)
+- Runs on CPU for inference — we ran all demos on CPU, no GPU needed
 - Fine-tuned models available for Something-Something V2 (174 hand-object action classes)
 - The pretrained backbone can be used as a feature extractor for custom tasks without fine-tuning
-- Real-time classification of short video clips is feasible
+- Classification of short video clips is feasible even without a GPU
 
 **What you'd need to build:**
 - A pipeline around it: video ingestion, windowing, post-processing
@@ -220,16 +220,16 @@ The model also segments a 60-second continuous playground video into actions in 
 ### What hardware do I need?
 
 For **inference** (running the model on new videos):
-- A single modern GPU (we ran all demos on one NVIDIA GPU)
-- The ViT-L model (326M parameters) is the most practical
-- CPU inference is possible but slow
+- **CPU is enough** — we ran every demo in this project on CPU, no GPU required
+- The ViT-L model (326M parameters) is the most practical size
+- For **real-time** use (live video streams), a GPU would be needed
 
 For **fine-tuning** on your own data:
-- More substantial GPU resources (multiple GPUs recommended)
+- GPU resources are needed (multiple GPUs recommended)
 - Something-Something V2 fine-tuning was done on 16+ GPUs by Meta
 
 For **just using the features** (extract embeddings, do nearest-neighbor lookup):
-- Single GPU to extract features, then everything else runs on CPU
+- CPU to extract features, then everything else is trivial
 - This is the most practical production path today
 
 ### How would I use this for my own videos / actions?
@@ -249,7 +249,7 @@ Our demo scripts (`demos/11_your_own_video.py`, `demos/12_your_own_latent_space.
 
 V-JEPA 2 processes fixed-length clips (typically 16 frames). For continuous video, you slide a window across the stream and classify each window. Our `classify_sliding.py` script does exactly this — it's how we made the playground demo.
 
-This isn't true frame-by-frame streaming, but for most practical applications (security, manufacturing QA, activity monitoring), the sliding window approach works well. Latency depends on window size and GPU speed.
+This isn't true frame-by-frame streaming, but for most practical applications (security, manufacturing QA, activity monitoring), the sliding window approach works well. We ran it on CPU for our demos; for real-time production use, a GPU would bring the latency down significantly.
 
 ### What datasets was it trained on?
 
