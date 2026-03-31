@@ -42,6 +42,10 @@ run-09: ## Animated V-JEPA 2 live video prediction GIF
 run-10: ## Animated cluster journey: video + t-SNE side by side
 	$(PY) demos/10_vjepa_cluster_journey.py
 
+run-11: ## Bring your own video — run V-JEPA 2 on any video file
+	@echo "Usage: make run-11 VIDEO=path/to/video.mp4"
+	$(PY) demos/11_your_own_video.py $(VIDEO)
+
 lint: ## Check code style
 	$(VENV)/bin/ruff check demos/
 

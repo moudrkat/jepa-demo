@@ -22,9 +22,13 @@
 | `07_patch_zoom.png` | PNG | Zoomed single-image comparison |
 | `08_tsne_final.png` | PNG | Final t-SNE clusters with labels |
 | `08_tsne_thumbnails.png` | PNG | t-SNE with actual image thumbnails |
-| `04_progressive.png` | PNG | Confidence growing as video progresses |
+| `04_progressive_rolling.png` | PNG | Predicts rolling before it happens |
+| `04_progressive_almost_falls.png` | PNG | 99% "almost falls off" at 50% of video |
+| `04_progressive_plug_pull.png` | PNG | Last-second reversal: plugging → pulling out |
+| `04_confidence_rolling.png` | PNG | Confidence crossover line chart |
 | `05_timeline.png` | PNG | Action boundaries discovered without labels (fine-tuned) |
 | `06_timeline.png` | PNG | Same but pretrained — still finds structure |
+| `10_cluster_journey.gif` | GIF | Video + dot moving through t-SNE clusters |
 
 ---
 
@@ -115,26 +119,47 @@ This is what learning in representation space gives you. The model builds an int
 **Say:**
 "Now JEPA isn't just for images. V-JEPA 2 extends this to video — and this is where the practical applications explode.
 
-Watch this GIF. A hand is dipping a brush into paint. The model sees more and more of the video, and the prediction bars update in real time. By halfway through, it already knows what's happening."
+Watch this GIF. A hand is transferring objects between bowls. The model sees more and more of the video, and the prediction bars update in real time."
 
 ![Three videos classified simultaneously by V-JEPA 2](outputs/09_vjepa_multi_video.gif)
 
-"Here's three different actions side by side. And look at the granularity — the model doesn't just say 'a hand doing something.' It distinguishes between 'taking one of many similar things on the table' versus 'picking something up.' These are subtle differences that require understanding *intent*, not just motion."
-
-![Progressive confidence: 64% at 25%, 99% at 50%, 100% at 75%](outputs/04_progressive.png)
-
-"This chart makes it concrete. At 25% of the video — you've barely started watching — the model is already 64% confident. By 50%, it's at 99%. It's anticipating the action before it finishes.
-
-Think about what this means for robotics, for autonomous systems. You don't need to wait for an action to complete to understand what's happening."
+"Here's three different actions side by side — transferring, unscrewing, sorting. Look at the granularity. These are subtle differences that require understanding *intent*, not just motion."
 
 ---
 
-### ACT 5 — The killer demo: discovering structure without labels (2-3 min)
+### ACT 5 — Predicting the future (4-5 min)
+
+**Say:**
+"But here's where it gets really wild. The model doesn't just recognise actions — it *predicts how they end* before they finish. Let me show you three examples."
+
+**Example 1: The rolling prediction**
+
+![Rolling: model predicts the roll before it happens](outputs/04_progressive_rolling.png)
+
+"Someone places an object on a slanted surface. At 25% and 50%, the model is uncertain — it thinks the object might just stay there. Then at 75%, boom — 96% confidence: 'Letting something roll down a slanted surface.' It predicted the rolling *before the object finished rolling*."
+
+**Example 2: Almost falls off but doesn't**
+
+![Almost falls: 99% confident at 50% it won't fall](outputs/04_progressive_almost_falls.png)
+
+"Someone pushes an object toward the edge of a table. At 50%, the model is already 99% confident: 'Pushing something so that it *almost* falls off but doesn't.' Not 'falls off.' *Almost* falls off. It predicted the near-miss outcome halfway through."
+
+**Example 3: The last-second reversal**
+
+![Plug and pull: prediction flips at the very end](outputs/04_progressive_plug_pull.png)
+
+"This is my favourite. Someone plugs something in. At 25%, 50%, 75% — the model says 'Plugging something into something' with rising confidence up to 98%. Then at 100%, it sees the hand pull back and flips to 'Plugging something in *but pulling it right out*' at 99.9%. The last few frames completely changed the interpretation.
+
+Think about what this means. The model isn't just pattern-matching — it's reasoning about *outcomes* and *intent*."
+
+---
+
+### ACT 6 — Discovering structure without labels (3-4 min)
 
 ![Action timeline: ground truth vs k-means clusters from fine-tuned V-JEPA 2](outputs/05_timeline.png)
 
 **Say:**
-"This might be the most impressive result. We took 8 different action videos — pouring, folding, transferring, placing, and so on — concatenated them into one long sequence. Then we ran V-JEPA's embeddings through simple k-means clustering. No labels. No supervision.
+"Now let me show you what happens when we go even further. We took 8 different action videos — pouring, folding, transferring, placing, and so on — concatenated them into one long sequence. Then we ran V-JEPA's embeddings through simple k-means clustering. No labels. No supervision.
 
 Top bar: the ground truth — what action is actually happening at each moment. Bottom bar: what k-means discovered from JEPA's features alone.
 
@@ -142,7 +167,13 @@ The boundaries *align*. The model found where one action ends and another begins
 
 ![Same experiment with pretrained V-JEPA 2 — noisier but structure still visible](outputs/06_timeline.png)
 
-"And here's the same experiment with the pretrained model — no fine-tuning at all, just pure self-supervised learning. It's noisier, but the temporal structure is still there. The model learns that 'pouring' is fundamentally different from 'folding' without anyone ever telling it what those words mean."
+"And here's the same experiment with the pretrained model — no fine-tuning at all, just pure self-supervised learning. It's noisier, but the temporal structure is still there."
+
+**And now watch this:**
+
+![Cluster journey: video playing alongside the dot moving through embedding space](outputs/10_cluster_journey.gif)
+
+"This is the cluster journey. On the left, the actual video playing. On the right, where the model's representation is in embedding space. Watch the dot — every time the action changes, it *jumps* to a completely different region. Pouring lives here, folding lives there, unscrewing lives over here. The model organised all of this on its own."
 
 ---
 
@@ -178,9 +209,12 @@ We're still early. But JEPA represents a genuine paradigm shift in how we think 
 | 9 | `08_tsne_thumbnails.png` | Thumbnails at cluster positions |
 | 10 | `09_vjepa_live_prediction.gif` | Live video prediction |
 | 11 | `09_vjepa_multi_video.gif` | Three videos at once |
-| 12 | `04_progressive.png` | Confidence evolution chart |
-| 13 | `05_timeline.png` | Discovered action boundaries (fine-tuned) |
-| 14 | `06_timeline.png` | Discovered action boundaries (pretrained) |
+| 12 | `04_progressive_rolling.png` | Predicts rolling before it happens |
+| 13 | `04_progressive_almost_falls.png` | Predicts the near-miss at 50% |
+| 14 | `04_progressive_plug_pull.png` | Last-second reversal — plugging then pulling |
+| 15 | `05_timeline.png` | Discovered action boundaries (fine-tuned) |
+| 16 | `06_timeline.png` | Discovered action boundaries (pretrained) |
+| 17 | `10_cluster_journey.gif` | Video + t-SNE dot moving between clusters |
 
 ## Tips for recording
 
