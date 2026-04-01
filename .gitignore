@@ -38,3 +38,7 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Personal podcast script
+PODCAST_SCENARIO_CZ.md
+podcast_visuals/

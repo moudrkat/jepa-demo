@@ -148,10 +148,7 @@ def create_animation(embedding, labels, raw_images):
         c=colors, s=30, alpha=0.7, edgecolors="white", linewidths=0.3,
     )
 
-    title = ax.set_title(
-        "I-JEPA features: random initialization",
-        fontsize=18, fontweight="bold", color="white", pad=15,
-    )
+    title = ax.set_title("", fontsize=18, fontweight="bold", color="white", pad=15)
 
     ax.set_xlim(-1.3, 1.3)
     ax.set_ylim(-1.3, 1.3)
@@ -196,14 +193,7 @@ def create_animation(embedding, labels, raw_images):
         scatter.set_alpha(alpha)
         scatter.set_sizes([20 + 30 * t_smooth] * n)
 
-        # Update title
-        if t < 0.1:
-            title.set_text("I-JEPA features: random initialization")
-        elif t < 0.9:
-            pct = int(t * 100)
-            title.set_text(f"t-SNE optimizing...  ({pct}%)")
-        else:
-            title.set_text("I-JEPA features: semantic clusters emerge")
+        title.set_text("")
 
         # Progress bar
         progress_bar.set_width(0.8 * t)
@@ -307,23 +297,16 @@ def plot_thumbnail_tsne(embedding, labels, raw_images):
         )
         ax.add_artist(ab)
 
-    # Class labels offset below each cluster (away from thumbnails)
-    for cls_idx in range(10):
-        mask = labels == cls_idx
-        pts = final[mask]
-        cx, cy = pts.mean(axis=0)
-        # Place label below the lowest point in the cluster
-        cy_bottom = pts[:, 1].min()
-        ax.annotate(
-            STL10_CLASSES[cls_idx].upper(),
-            xy=(cx, cy), xytext=(cx, cy_bottom - 0.15),
-            fontsize=11, fontweight="bold", color="white",
-            ha="center", va="top",
-            bbox=dict(boxstyle="round,pad=0.25", facecolor=CLASS_COLORS[cls_idx],
-                      alpha=0.9, edgecolor="white", linewidth=0.5),
-            arrowprops=dict(arrowstyle="-", color=CLASS_COLORS[cls_idx],
-                            lw=1.5, alpha=0.5),
-        )
+    # Legend
+    legend_handles = [
+        plt.Line2D([0], [0], marker="s", color="w",
+                    markerfacecolor=CLASS_COLORS[i], markersize=10,
+                    label=STL10_CLASSES[i], linestyle="None")
+        for i in range(10)
+    ]
+    ax.legend(handles=legend_handles, loc="upper left", fontsize=11,
+              facecolor="#2A2A4A", edgecolor="#555", labelcolor="white",
+              ncol=2, framealpha=0.9)
 
     ax.set_title(
         "I-JEPA clusters STL-10 images by semantic meaning\n"

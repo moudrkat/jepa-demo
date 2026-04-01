@@ -125,6 +125,32 @@ MAE (the pixel-prediction approach) masks random patches scattered across the im
 
 JEPA masks **large contiguous blocks**. This forces high-level reasoning: "Given that I can see a dog's head in the upper-left, what kind of thing should be in the lower-right?" The answer requires understanding the whole scene, not just local texture.
 
+### How does V-JEPA extend I-JEPA to video?
+
+I-JEPA works on single images — it splits a 2D image into a grid of patches and masks spatial blocks. V-JEPA / V-JEPA 2 extends this to **video** by treating it as a 3D volume: height × width × time.
+
+**I-JEPA (images):**
+- Input: one image → 2D grid of patches (e.g., 14×14 = 196 patches)
+- Masking: large **spatial blocks** — contiguous rectangles within the image
+- Output: a representation of the image
+
+**V-JEPA / V-JEPA 2 (video):**
+- Input: a video clip → 3D grid of **space-time tokens** (e.g., 14×14 spatial × T temporal = thousands of tokens)
+- Masking: **space-time tubes** — blocks that extend across multiple frames, so the model must predict what happens over time, not just fill in a spatial gap
+- Output: a representation that captures both *what* is in the scene and *what is happening*
+
+The key architectural difference is the masking strategy. In V-JEPA, a masked region spans several consecutive frames in the same spatial location — like blacking out a rectangle in the video for a stretch of time. To predict what's behind that mask, the model has to understand motion, cause and effect, and temporal dynamics — not just static appearance.
+
+The core training loop stays the same: context encoder → predictor → compare against target encoder (EMA). But the predictor now has a much harder job — it must reason about dynamics, not just spatial coherence.
+
+**V-JEPA 2 specifically** scales this up with:
+- Larger backbone (ViT-L, 326M params, or ViT-H, 650M)
+- Training on 2M video clips (VideoMix2M) instead of smaller datasets
+- 64 frames per clip at 256×256 resolution — much longer temporal context
+- An optional fine-tuning head (attentional probe) for downstream tasks like action classification on Something-Something V2
+
+The result: V-JEPA 2's pretrained representations are good enough to cluster actions without any fine-tuning — which is exactly what we test in Demo 11 by embedding playground clips alongside SSv2 clips in a shared t-SNE space.
+
 ### What's the difference between pixel prediction and representation prediction?
 
 ![MAE predicts pixels, JEPA predicts representations](outputs/02_mae_vs_jepa.png)
@@ -135,11 +161,11 @@ JEPA masks **large contiguous blocks**. This forces high-level reasoning: "Given
 
 ![Side-by-side on real images: MAE pixel reconstruction vs JEPA feature activation](outputs/07_mae_vs_jepa.png)
 
-Same four images — cat, dog, airplane, ship. MAE's pixel reconstruction is blurry. JEPA's feature activation map lights up on the *meaningful* parts: the cat's face, the airplane's shape. It ignores background noise.
+Same four images — cat, dog, airplane, ship. MAE's pixel reconstruction is blurry. JEPA's feature activation map shows where the model concentrates its representational energy — boundaries, context, and spatial relationships rather than pixel-level detail.
 
 ![Zoomed comparison on a single cat image](outputs/07_patch_zoom.png)
 
-Zoomed in: MAE wastes enormous capacity predicting fur texture and lighting. JEPA doesn't care about fur — it knows it's a cat.
+Zoomed in: MAE wastes enormous capacity predicting fur texture and lighting. JEPA focuses on spatial structure and boundaries — it encodes *what* is there and *where*, not the surface detail.
 
 ### How does JEPA avoid collapse? (The EMA trick)
 
@@ -364,6 +390,10 @@ JEPA is the representation-learning foundation: learn the right state space. V-J
 - LeCun, Y., Chopra, S. & Hadsell, R. "A Tutorial on Energy-Based Learning." MIT Press, 2006.
 - Dawid, A. & LeCun, Y. "Introduction to Latent Variable Energy-Based Models." *J. Stat. Mech.* 2024.
 - LeCun, Y. "A Path Towards Autonomous Machine Intelligence." 2022.
+
+**Overviews:**
+- Turing Post. "The JEPA Map: From Foundations to Frontier." https://www.turingpost.com/p/jepamap
+- Turing Post. "JEPA: Joint Embedding Predictive Architecture." https://www.turingpost.com/p/jepa
 
 **Physics connections:**
 - Choromanska, A. et al. "The Loss Surfaces of Multilayer Networks." AISTATS 2015.

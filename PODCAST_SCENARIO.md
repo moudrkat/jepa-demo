@@ -23,6 +23,13 @@
 
 ## The scenario
 
+### NEWS OF THE WEEK (30s)
+
+**Say:**
+"Two weeks ago, Meta AI released V-JEPA 2.1. The previous version — V-JEPA 2 — was great at understanding *what* is happening in a video, but it struggled with *where exactly*. The new version fixes that — image segmentation nearly doubled and a robot grasps objects ten points better. And it's the same architecture, just better training. What that architecture is and why I think it matters — that's the whole episode today."
+
+---
+
 ### COLD OPEN — The LinkedIn post that started this (30-60s)
 
 *Play screencast `outputs/linkedin_vl_jepa_post.webm`*
@@ -52,55 +59,28 @@ And this one idea spawned a whole family of models — each one pushing further:
 - **VL-JEPA** — understands video *and* language. Can talk about what it sees.
 - **V-JEPA 2.1** — understands video precisely enough to **control a robot**.
 
-Same core idea, four directions. Let me show you how it builds up."
+Same core idea, four directions. Let me show you what that looks like.
+
+How does it learn? By playing fill-in-the-blank with images — hide parts of a picture, predict what's missing. But here's the key: it doesn't try to guess exact pixels. It predicts *meaning* — an abstract description of what's behind the mask. And it does this on millions of images, with no labels, no supervision."
 
 ---
 
-### ACT 1 — Masking: fill-in-the-blank for images (2-3 min)
-
-*Model: **I-JEPA** — images only*
-
-![MAE vs JEPA: masking and prediction](outputs/02_mae_vs_jepa.png)
-
-**Say:**
-"So how do these models learn without anyone labeling the images? It's basically a fill-in-the-blank exercise — but only during *training*. You take an image, split it into a grid of small patches — like tiles — and you *hide* some of them. Then you tell the model: guess what's missing. If it can guess correctly over millions of images, it must have learned something about how the visual world works. No labels needed.
-
-Once it's trained, the masking is gone — you give it a complete image or video and it just understands it. Like a student who practiced fill-in-the-blank to learn English, but now reads whole books.
-
-That training trick is called *masking* — and here's where it gets interesting: *what* you hide and *what* you ask the model to predict — that changes everything."
-
-![MAE vs JEPA zoomed on a single cat image](outputs/07_patch_zoom.png)
-
-"Look at this cat. The approach on the left — MAE, Masked Autoencoder — hides random patches scattered all over the image. And then it asks: reconstruct the exact pixels. What color was that fur? What shade was that shadow? The result? Blurry. It gets the rough shape but wastes enormous effort on noise — exact textures, lighting, color gradients. And because the hidden patches are scattered, the model can often cheat by just blending nearby colors.
-
-I-JEPA does it differently. It hides *large blocks* — not random scattered patches. If the entire bottom half of the image is gone, you can't just interpolate from neighbors. You have to actually *think*: 'I see a cat's head up here, so there should be a body down there.'
-
-And then the crucial part: I-JEPA doesn't even try to predict pixels. It predicts a *representation* — an abstract description. Not 'these specific brown pixels' but 'this is part of a cat.'"
-
-LLMs predict the next *word*. Pixel models predict the next *pixel*. JEPA predicts the next *concept*."
-
----
-
-### ACT 2 — What does I-JEPA actually learn? The representation space (2-3 min)
+### ACT 1 — The representation space: what JEPA actually learns (2-3 min)
 
 *Model: **I-JEPA** — images only*
 
 ![t-SNE animation — clusters forming from random noise](outputs/08_tsne_animation.gif)
 
 **Say:**
-"Okay, but does this actually work? Let me show you. I took 300 images — cats, dogs, airplanes, trucks, ships — and ran them through I-JEPA. The model has *never seen labels*. Nobody told it what a cat is. Nobody told it what a ship is.
+"So does this actually work? Let me show you. I took 300 images — cats, dogs, airplanes, trucks, ships — and ran them through I-JEPA. The model has *never seen labels*. Nobody told it what a cat is. Nobody told it what a ship is.
 
-Each dot here is one image. Watch what happens when we visualize the model's internal representation space..."
+Each dot here is one image. Watch what happens when we visualize what the model learned..."
 
-*Let the GIF play — dots organize into clusters.*
+*GIF - dots organize into clusters.*
 
-"Animals on one side, vehicles on the other. Cats near dogs. Trucks near cars. The model organized all of this by itself, just from learning to predict representations."
+"Animals on one side, vehicles on the other. Cats near dogs. Trucks near cars. The model organized all of this by itself.
 
-![t-SNE with actual image thumbnails](outputs/08_tsne_thumbnails.png)
-
-"And here's the same thing with actual thumbnails so you can see it's real. Horses together, ships together, cars together. The model doesn't know the *word* 'horse' — but it knows these images share something fundamental.
-
-This is what representation space looks like. Instead of storing pixels, the model builds an internal map of *concepts*. Similar things live close together. Different things live far apart. It's like the model built its own mental dictionary — without anyone teaching it the words."
+This is what we call *representation space*. Instead of storing pixels, the model builds an internal map of concepts. Similar things live close together. Different things live far apart. Like a mental dictionary — built without anyone teaching it the words."
 
 ---
 
@@ -149,7 +129,11 @@ And then I let it run on a longer video — sixty seconds of my kids just playin
 
 **VL-JEPA** — that's the post I showed you at the beginning — adds *language*. Same idea: don't predict the next token, predict the *meaning* of the text. Now it can understand video and talk about it.
 
-And the latest one, **V-JEPA 2.1**, from just a few weeks ago? It makes the representations so spatially precise that a robot can use them to *pick up objects*. Twenty points better at grasping than the previous version. Same idea — predict meaning — but now precise enough to guide a hand.
+And the latest one, **V-JEPA 2.1**, from just a few weeks ago? Its representations are so spatially precise that a robot can use them to *plan its actions* — figure out what to do to pick up an object and where to move it.
+
+And here's why that matters: other robot models — like Google's RT-2 or Berkeley's Octo — need hundreds of thousands of robot demonstrations to learn. V-JEPA doesn't. It learns how the world works from regular internet videos — no robot data needed for that. Then you give it just 62 hours of unlabeled robot footage and it can plan actions. It doesn't control the robot directly — it's more like the brain that says 'grab the cup and move it left', and the robot's own motor system handles the actual movement. But the understanding of the world? That comes from JEPA.
+
+And because it plans in representation space instead of generating pixel-by-pixel video of the future, it's *fast*. NVIDIA's Cosmos — a generative approach — takes four minutes to plan a single action. V-JEPA does it in sixteen seconds. Fifteen times faster, because it's not wasting time on irrelevant pixels — it's thinking in concepts.
 
 One core idea. Images, video, language, robotics. That's the JEPA family.
 
@@ -162,20 +146,11 @@ This is Yann LeCun's bet on how we get to real world models — AI that doesn't 
 | # | Visual | When |
 |---|--------|------|
 | 0 | `linkedin_vl_jepa_post.webm` | Cold open — screencast of the post that sparked this |
-| 1 | `07_patch_zoom.png` | Pixel prediction is blurry and wasteful |
-| 2 | `07_mae_vs_jepa.png` | Side-by-side: pixels vs features |
-| 3 | `02_mae_vs_jepa.png` | The core diagram: pixel vs representation |
-| 4 | `08_tsne_animation.gif` | Representation space — clusters forming |
+| 1 | `08_tsne_animation.gif` | Representation space — clusters forming |
 | 5 | `08_tsne_thumbnails.png` | Proof: actual thumbnails in clusters |
 | 6 | `10_cluster_journey.gif` | Video: dot moving through action space |
 | 7 | `linkedin_vjepa_playground.mp4` | The playground demo — real vs pretend |
 
-## Tips for recording
-
-- **The LLM comparison is your anchor** — keep coming back to "LLMs predict words, pixel models predict pixels, JEPA predicts meaning"
-- **The playground video is your closer** — it's personal, visual, and the "faking it" moment is the wow
-- **Let the t-SNE GIF breathe** — pause and let people watch the clusters form before explaining
-- **Keep the pixel vs representation contrast visual** — point at the blurry MAE reconstruction vs the clean JEPA activation map
 
 ---
 
@@ -217,9 +192,3 @@ This is Yann LeCun's bet on how we get to real world models — AI that doesn't 
 | 9 | JEPA concept | LeCun, "A Path Towards Autonomous Machine Intelligence" (2022) | [OpenReview](https://openreview.net/pdf?id=BZ5a1r-kVsf) |
 | 10 | **V-JEPA 2.1** | Mur-Labadia et al., "V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning" (2026) | [arXiv:2603.14482](https://arxiv.org/abs/2603.14482) |
 | 11 | **CLIP** | Radford et al., "Learning Transferable Visual Models From Natural Language Supervision" (2021) | [arXiv:2103.00020](https://arxiv.org/abs/2103.00020) |
-
-### V-JEPA vs VL-JEPA — what's the difference?
-
-- **V-JEPA** (Video JEPA) — self-supervised, learns from video only, predicts visual representations. No language. This is what the playground demo uses.
-- **VL-JEPA** (Vision-Language JEPA) — extends JEPA to text, predicts continuous embeddings of language instead of generating tokens autoregressively. Combines vision + language.
-- The podcast demos use **V-JEPA 2**. The cold open references Chen's **VL-JEPA** post as the hook — "they're now doing this with language too, but let me show you how it works with just vision first."
