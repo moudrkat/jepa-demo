@@ -525,8 +525,8 @@ def plot_transfer_diagram():
 # Visualization 7: MAE vs JEPA side by side (what each predicts)
 # ---------------------------------------------------------------------------
 def plot_mae_vs_jepa():
-    """Visual comparison of what MAE and JEPA actually predict."""
-    fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+    """Visual comparison of MAE vs JEPA: masking strategy and what gets predicted."""
+    fig, axes = plt.subplots(2, 3, figsize=(16, 11))
 
     images = load_sample_images()
     img = images[0]
@@ -534,12 +534,12 @@ def plot_mae_vs_jepa():
     patch_px = 224 // grid_size
     ctx, tgt = generate_ijepa_masks(grid_size, grid_size)
 
-    # Row 0: MAE approach
+    # --- Row 0: MAE approach ---
     axes[0, 0].imshow(img)
-    axes[0, 0].set_title("Original Image", fontsize=13)
+    axes[0, 0].set_title("Original image", fontsize=13)
     axes[0, 0].axis("off")
 
-    # MAE: random scattered mask
+    # MAE: random scattered mask — show which patches are hidden
     rng = random.Random(42)
     mae_mask = set(rng.sample(range(grid_size * grid_size), int(grid_size * grid_size * 0.75)))
     masked_mae = img.copy()
@@ -548,10 +548,10 @@ def plot_mae_vs_jepa():
         y0, x0 = r * patch_px, c * patch_px
         masked_mae[y0:y0 + patch_px, x0:x0 + patch_px] = 0.7
     axes[0, 1].imshow(masked_mae)
-    axes[0, 1].set_title("MAE: Random 75% Masked", fontsize=13)
+    axes[0, 1].set_title("Hide 75% random patches", fontsize=13, color="#E65100")
     axes[0, 1].axis("off")
 
-    # MAE output: reconstructed pixels (simulated with heavy blur to show the effect)
+    # MAE reconstruction with red tint on reconstructed patches to show which are filled in
     from PIL import ImageFilter
     pil_img = Image.fromarray((img * 255).astype(np.uint8))
     blurred = np.array(pil_img.filter(ImageFilter.GaussianBlur(8))) / 255.0
@@ -559,88 +559,102 @@ def plot_mae_vs_jepa():
     for p in mae_mask:
         r, c = divmod(p, grid_size)
         y0, x0 = r * patch_px, c * patch_px
-        recon[y0:y0 + patch_px, x0:x0 + patch_px] = blurred[y0:y0 + patch_px, x0:x0 + patch_px]
+        patch = blurred[y0:y0 + patch_px, x0:x0 + patch_px].copy()
+        # Subtle red tint on reconstructed patches so you can tell them apart
+        patch[:, :, 0] = np.clip(patch[:, :, 0] * 1.15, 0, 1)
+        patch[:, :, 1] *= 0.9
+        patch[:, :, 2] *= 0.9
+        recon[y0:y0 + patch_px, x0:x0 + patch_px] = patch
     axes[0, 2].imshow(recon)
-    axes[0, 2].set_title("MAE Predicts: Pixels\n(must reconstruct textures, colors)", fontsize=12,
+    axes[0, 2].set_title("Reconstruct every pixel\n(blurry, tinted = reconstructed)", fontsize=12,
                          color="#E65100")
     axes[0, 2].text(0.5, 0.02, "illustration — see demo 07 for real MAE output",
                     transform=axes[0, 2].transAxes, ha="center", fontsize=8,
                     color="#999", fontstyle="italic")
     axes[0, 2].axis("off")
 
-    # Row 1: JEPA approach
+    # --- Row 1: JEPA approach ---
     axes[1, 0].imshow(img)
-    axes[1, 0].set_title("Original Image", fontsize=13)
+    axes[1, 0].set_title("Original image", fontsize=13)
     axes[1, 0].axis("off")
 
-    # JEPA: block mask
-    masked_jepa = np.ones_like(img) * 0.85
+    # JEPA: block mask with legend
     overlay = np.zeros((224, 224, 4))
     for p in range(grid_size * grid_size):
         r, c = divmod(p, grid_size)
         y0, x0 = r * patch_px, c * patch_px
         if p in ctx:
-            masked_jepa[y0:y0 + patch_px, x0:x0 + patch_px] = img[y0:y0 + patch_px, x0:x0 + patch_px]
             overlay[y0:y0 + patch_px, x0:x0 + patch_px] = [0.13, 0.59, 0.95, 0.4]
         elif p in tgt:
             overlay[y0:y0 + patch_px, x0:x0 + patch_px] = [1.0, 0.34, 0.13, 0.5]
+        else:
+            overlay[y0:y0 + patch_px, x0:x0 + patch_px] = [0.5, 0.5, 0.5, 0.5]
 
     axes[1, 1].imshow(img)
     axes[1, 1].imshow(overlay)
-    axes[1, 1].set_title("JEPA: Block Masking\n(blue=context, red=target)", fontsize=12)
+    axes[1, 1].set_title("Hide large blocks\n(blue = visible, red = must predict, grey = unused)",
+                         fontsize=11, color="#1565C0")
     axes[1, 1].axis("off")
 
-    # JEPA output: show that predictions are abstract vectors, not pixels
-    # Draw a clean schematic: target regions with vector notation
+    # JEPA output: abstract vectors
     abstract_bg = np.ones((224, 224, 3)) * 0.95
-    # Show context patches faintly
     for p in ctx:
         r, c = divmod(p, grid_size)
         y0, x0 = r * patch_px, c * patch_px
         abstract_bg[y0:y0 + patch_px, x0:x0 + patch_px] = [0.85, 0.91, 0.97]
-    # Show target patches as colored blocks with vector labels
     target_colors = [
-        [0.99, 0.88, 0.85],  # light red
-        [0.85, 0.93, 0.85],  # light green
-        [0.88, 0.85, 0.97],  # light purple
-        [0.97, 0.95, 0.82],  # light yellow
+        [0.99, 0.88, 0.85],
+        [0.85, 0.93, 0.85],
+        [0.88, 0.85, 0.97],
+        [0.97, 0.95, 0.82],
     ]
-    # Group target patches into contiguous blocks for labeling
-    target_list = sorted(tgt)
-    # Assign colors by spatial region
-    for p in target_list:
+    for p in sorted(tgt):
         r, c = divmod(p, grid_size)
         y0, x0 = r * patch_px, c * patch_px
         color_idx = (r // 4 + c // 8) % len(target_colors)
         abstract_bg[y0:y0 + patch_px, x0:x0 + patch_px] = target_colors[color_idx]
-        # Add thin border
         abstract_bg[y0, x0:x0 + patch_px] = [0.7, 0.7, 0.7]
         abstract_bg[y0:y0 + patch_px, x0] = [0.7, 0.7, 0.7]
 
     axes[1, 2].imshow(abstract_bg)
-    # Add vector labels on the target regions
-    axes[1, 2].text(112, 60, "z = [0.3, -0.1, 0.8, ...]",
+    axes[1, 2].text(112, 55, "z = [0.3, -0.1, 0.8, ...]",
                     ha="center", va="center", fontsize=10,
                     fontweight="bold", color="#1565C0",
                     bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
                               edgecolor="#1565C0", alpha=0.9))
-    axes[1, 2].text(112, 160, "abstract features\nnot pixels",
+    axes[1, 2].text(112, 155, "predict abstract meaning\nnot pixel colors",
                     ha="center", va="center", fontsize=11,
                     fontstyle="italic", color="#555",
                     bbox=dict(boxstyle="round,pad=0.3", facecolor="white",
                               edgecolor="#999", alpha=0.85))
-    axes[1, 2].set_title("JEPA Predicts: Representations\n(1024-dim feature vectors)", fontsize=12,
+    axes[1, 2].set_title("Predict representations\n(1024-dim feature vectors)", fontsize=12,
                          color="#1565C0")
     axes[1, 2].axis("off")
 
     # Row labels
-    fig.text(0.02, 0.75, "MAE", fontsize=16, fontweight="bold", color="#E65100",
+    fig.text(0.02, 0.72, "MAE", fontsize=16, fontweight="bold", color="#E65100",
              rotation=90, va="center")
-    fig.text(0.02, 0.3, "JEPA", fontsize=16, fontweight="bold", color="#1565C0",
+    fig.text(0.02, 0.30, "JEPA", fontsize=16, fontweight="bold", color="#1565C0",
              rotation=90, va="center")
 
+    # Explanation annotations between rows
+    fig.text(0.17, 0.50,
+             "Both learn by masking — hiding parts of the image and learning to predict what's missing.\n"
+             "The key difference: what they mask and what they predict.",
+             ha="center", va="center", fontsize=11, color="#333",
+             fontweight="bold",
+             bbox=dict(boxstyle="round,pad=0.5", facecolor="#F5F5F5",
+                       edgecolor="#CCC", alpha=0.95))
+    fig.text(0.55, 0.50,
+             "MAE: scattered random patches  →  can interpolate from neighbors  →  learns textures\n"
+             "JEPA: large contiguous blocks  →  must reason about the whole scene  →  learns concepts",
+             ha="center", va="center", fontsize=10, color="#555",
+             bbox=dict(boxstyle="round,pad=0.5", facecolor="#F5F5F5",
+                       edgecolor="#CCC", alpha=0.95))
+
     plt.suptitle("MAE vs I-JEPA: What Gets Predicted?", fontsize=18, fontweight="bold")
-    plt.tight_layout(rect=[0.03, 0, 1, 0.93])
+    plt.tight_layout(rect=[0.04, 0, 1, 0.93])
+    plt.subplots_adjust(hspace=0.55)
     path = OUTPUT_DIR / "02_mae_vs_jepa.png"
     plt.savefig(path, dpi=150, bbox_inches="tight", facecolor="white")
     plt.close()

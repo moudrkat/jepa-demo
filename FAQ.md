@@ -16,9 +16,11 @@ Think of it this way:
 - **Image generators** (MAE, diffusion) predict *pixels*
 - **JEPA** predicts *meaning*
 
-There are two versions:
+There's a whole family:
 - **I-JEPA** — for images (2023)
 - **V-JEPA / V-JEPA 2** — for video (2024/2025)
+- **VL-JEPA** — for video + language (2025)
+- **V-JEPA 2.1** — dense features, precise enough for robotics (2026)
 
 ### How is JEPA different from LLMs?
 
@@ -38,6 +40,25 @@ JEPA skips the pixel level entirely. It encodes images into an abstract *represe
 | **Goal** | Language generation & reasoning | Visual world model |
 
 They're complementary, not competing. LLMs handle language; JEPA handles vision.
+
+### How is JEPA different from CLIP?
+
+Both CLIP and JEPA work with visual representations, but they learn in fundamentally different ways:
+
+**CLIP** (OpenAI, 2021) uses **contrastive learning**: show it an image and a text, and it learns "do these match?" Trained on 400M image-text pairs, it pulls matching pairs together and pushes non-matching pairs apart. Result: a shared space where "photo of a cat" and a cat image land near each other. Great at matching and retrieval, but it only learns to *compare* — it doesn't deeply model what's happening in a scene.
+
+**JEPA** uses **predictive learning**: hide part of the input and predict the representation of the missing part. No text needed, no pairs needed — just the visual input itself. This forces the model to build an internal model of how the visual world works, not just what goes with what.
+
+| | CLIP | JEPA |
+|---|---|---|
+| **Training signal** | Image-text pairs (contrastive) | Self-supervised (predictive, no labels) |
+| **Learns from** | 400M image-text pairs from the internet | Images/video alone |
+| **Strength** | Matching vision ↔ language | Deep visual understanding |
+| **Weakness** | Shallow scene understanding, needs paired data | No language (until VL-JEPA) |
+
+**VL-JEPA** (Chen et al., 2025) bridges this gap: it applies the JEPA philosophy to language, predicting continuous text embeddings instead of generating tokens. It beats CLIP and SigLIP2 on video benchmarks with 50% fewer parameters.
+
+Think of it this way: CLIP is *flashcards* — "does this picture go with this word?" JEPA is *fill-in-the-blank* — "given what you can see, what's missing?" The second approach builds deeper understanding.
 
 ### What does "representation space" mean?
 
@@ -65,6 +86,23 @@ This is by design. LeCun argues that predicting exact pixels is wasteful — the
 ---
 
 ## How It Works
+
+### What is masking and why do they do it?
+
+Masking is a **fill-in-the-blank exercise for images** that happens **only during training**. You hide parts of the picture and make the model guess what's missing. If it can guess correctly, it must have learned something about how the visual world works.
+
+Think of learning a language. If I give you: *"The cat sat on the ___"*, you can fill in "mat" or "chair" because you understand English. Nobody had to label the sentence for you — the structure itself was the teacher.
+
+Same idea for images: hide patches, predict what's missing, and through millions of these exercises the model builds an understanding of visual structure. No human labels needed. That's what makes it *self-supervised*.
+
+Once trained, the masking is gone — you feed the model a complete image or video and it just processes it normally, using everything it learned from those exercises. Like a student who practiced fill-in-the-blank but now reads and understands complete sentences.
+
+**Why MAE and JEPA mask differently:**
+
+- **MAE hides random scattered patches.** Most neighbors are still visible, so the model can "cheat" — just blend nearby colors and textures. It learns to interpolate pixels, but not necessarily to *understand* the image.
+- **JEPA hides entire large blocks.** If the whole bottom-right of the image is gone, you can't interpolate. You have to actually reason: "I see a dog's head up here, so there's probably a dog's body down there." That forces the model to learn *concepts*, not just textures.
+
+![Masking comparison](outputs/02_mae_vs_jepa.png)
 
 ### The architecture in one picture
 
