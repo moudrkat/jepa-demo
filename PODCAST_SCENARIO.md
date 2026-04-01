@@ -12,7 +12,6 @@
 | File | Type | What it shows |
 |------|------|---------------|
 | `02_mae_vs_jepa.png` | PNG | MAE reconstructs pixels vs JEPA predicts representations |
-| `07_mae_vs_jepa.png` | PNG | Side-by-side MAE vs JEPA on cat, dog, airplane, ship |
 | `07_patch_zoom.png` | PNG | Zoomed single-image comparison — blurry pixel prediction |
 | `08_tsne_animation.gif` | GIF | Random dots organizing into semantic clusters |
 | `08_tsne_thumbnails.png` | PNG | t-SNE with actual image thumbnails |
@@ -77,10 +76,6 @@ That training trick is called *masking* — and here's where it gets interesting
 I-JEPA does it differently. It hides *large blocks* — not random scattered patches. If the entire bottom half of the image is gone, you can't just interpolate from neighbors. You have to actually *think*: 'I see a cat's head up here, so there should be a body down there.'
 
 And then the crucial part: I-JEPA doesn't even try to predict pixels. It predicts a *representation* — an abstract description. Not 'these specific brown pixels' but 'this is part of a cat.'"
-
-![Full side-by-side: MAE pixel reconstruction vs JEPA feature activation](outputs/07_mae_vs_jepa.png)
-
-"Here's the same comparison on four images — cat, dog, airplane, ship. The middle column shows what MAE reconstructed — blurry pixels. The right column shows what I-JEPA focuses on — see how it lights up on the meaningful parts? The cat's face, the dog's body, the airplane's shape. It ignores the background noise entirely.
 
 LLMs predict the next *word*. Pixel models predict the next *pixel*. JEPA predicts the next *concept*."
 
