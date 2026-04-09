@@ -1,6 +1,6 @@
 # JEPA FAQ — The Deep Reference
 
-A companion document for anyone who wants to go deeper after the podcast.
+A companion document for anyone who wants to go deeper.
 Quick answers with visuals, from "what is JEPA" all the way to production and physics.
 
 ---
@@ -247,7 +247,7 @@ Even the **pretrained model** (no fine-tuning, no labels at all) finds this stru
 
 ### The playground experiment: real vs pretend
 
-![Playground demo video](outputs/linkedin_vjepa_playground.mp4)
+![Playground demo video](outputs/vjepa_playground.mp4)
 
 We tested V-JEPA 2 on a real scenario: same hand, same toy, same background. In one video: actually putting a ball into a bag. In the other: *pretending* to — same motion, but not letting go.
 

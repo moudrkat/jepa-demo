@@ -110,19 +110,16 @@ make help               # Show all available targets
 - Demo 03: ~2-3 min (3 video clips, inference on each)
 - Demo 04: ~3-5 min (4 progressive inference passes on one clip)
 
-## Roadmap
+## Ideas & contributions welcome
 
-**Embedding interpolation** — use the pretrained backbone to interpolate between action embeddings and visualize smooth trajectories through representation space, testing whether the self-supervised model learns a continuous manifold of physical states (see the interpolation discussion in [ARTICLE.md](ARTICLE.md)).
+Some directions we'd love to explore — PRs, issues, and half-baked ideas all welcome:
 
-The big next step is a **real-time video demo** — something anyone can try with just a webcam:
+- **Real-time webcam demo** — narrate actions live, or turn it into a game ("can you fool the model?")
+- **V-JEPA + LLM combo** — feed action predictions into an LLM for natural-language commentary
+- **Embedding interpolation** — smooth trajectories through representation space (see [ARTICLE.md](ARTICLE.md))
+- **Interactive masking playground** — draw masks on images, see what the model predicts
 
-- **Live action narrator** — point your webcam at your desk, pick up objects, push things around, and V-JEPA 2 narrates what you're doing in real time ("Taking one of many similar things on the table", "Pushing something so it almost falls off...")
-- **V-JEPA + LLM combo** — feed V-JEPA 2's action predictions into a talking LLM that commentates your actions in natural language, like a live sports narrator for everyday tasks
-- **"Can the AI tell what you're doing?"** — a game mode where you perform actions and try to fool the model, or match a target action it gives you
-- **Webcam similarity search** — live I-JEPA features from your camera, matched against a dataset in real time
-- **Interactive masking playground** — draw masks on images and see what the model predicts
-
-If you have ideas for a killer use case, open an issue!
+Have a different idea? [Open an issue](../../issues) — we'd love to hear it.
 
 ## Article
 
