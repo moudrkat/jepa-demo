@@ -1,9 +1,11 @@
 # JEPA Demo — Joint Embedding Predictive Architecture
 
 A collection of visual demos showcasing Meta's **I-JEPA** (image) and **V-JEPA 2** (video) models.
-Built for a video podcast presentation.
+Run them yourself — no GPU needed.
 
 > **Want the full story?** Read [ARTICLE.md](ARTICLE.md) — a visual deep-dive into how JEPA works, with inline results from every demo.
+>
+> **Heard the podcast?** See [PODCAST_SCENARIO.md](PODCAST_SCENARIO.md) for a map of what was covered and which demos go with each section.
 
 ## What is JEPA?
 
