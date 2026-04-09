@@ -48,6 +48,16 @@ spatial relationships, motion dynamics.
 | 05 | `demos/05_vjepa_cluster_analysis.py` | Temporal clustering — slide a window across concatenated action clips, cluster V-JEPA 2 embeddings with k-means, visualize with t-SNE | Tested |
 | 06 | `demos/06_vjepa_cluster_pretrained.py` | Same clustering but with the **base pretrained** V-JEPA 2 (no fine-tuning) — tests what self-supervised learning alone captures | Tested |
 
+## Playground Dataset
+
+We recorded 89 short clips of hand-object interactions with children's toys and classified them with V-JEPA 2.
+The dataset is available as a [GitHub release](https://github.com/moudrkat/jepa-demo/releases/tag/playground-dataset-v1) (22 MB, 256x256 videos + metadata CSV).
+
+```bash
+# Download
+gh release download playground-dataset-v1 -p "playground-dataset-256.zip"
+```
+
 ## Setup
 
 ```bash
